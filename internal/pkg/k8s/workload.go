@@ -4,14 +4,16 @@ import (
 	"context"
 	"fmt"
 
+	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
 type Workload struct {
-	kind      string
-	name      string
-	namespace string
-	replicas  uint
+	Kind      string
+	Name      string
+	Namespace string
+	Replicas  uint
 }
 
 func (c *Client) GetWorkloads(ctx context.Context, namespace, storageClass string) ([]Workload, error) {
@@ -40,27 +42,27 @@ func (c *Client) GetWorkloads(ctx context.Context, namespace, storageClass strin
 				continue
 			}
 
-			kind, err := c.getWorkloadOwnerType(ctx, namespace, pod.Name)
+			ownerKind, err := c.getWorkloadOwnerKind(ctx, namespace, pod.Name)
 			if err != nil {
 				return nil, err
 			}
 
-			owner, err := c.getPodOwnerName(ctx, namespace, pod.Name)
+			ownerName, err := c.getPodOwnerName(ctx, namespace, pod.Name)
 			if err != nil {
 				return nil, err
 			}
 
-			replicas, err := c.getReplicas(ctx, namespace, owner, kind)
+			replicas, err := c.getReplicas(ctx, namespace, ownerName, ownerKind)
 			if err != nil {
 				return nil, err
 			}
 
-			fmt.Printf("Pod %s (%s: %s) use a PVC of storage class %q\n", pod.Name, kind, owner, storageClass)
+			fmt.Printf("Pod %s (%s: %s) use a PVC of storage class %q\n", pod.Name, ownerKind, ownerName, storageClass)
 			workloads = append(workloads, Workload{
-				kind:      kind,
-				name:      owner,
-				namespace: namespace,
-				replicas:  replicas,
+				Kind:      ownerKind,
+				Name:      ownerName,
+				Namespace: namespace,
+				Replicas:  replicas,
 			})
 		}
 	}
@@ -70,7 +72,7 @@ func (c *Client) GetWorkloads(ctx context.Context, namespace, storageClass strin
 
 // TODO: maybe use k8s type, not string
 
-func (c *Client) getWorkloadOwnerType(ctx context.Context, namespace, podName string) (string, error) {
+func (c *Client) getWorkloadOwnerKind(ctx context.Context, namespace, podName string) (string, error) {
 	ownerKind, err := c.getPodOwnerKind(ctx, namespace, podName)
 	if err != nil {
 		return "", err
@@ -78,11 +80,7 @@ func (c *Client) getWorkloadOwnerType(ctx context.Context, namespace, podName st
 
 	switch ownerKind {
 	case "ReplicaSet":
-		rsName, err := c.getReplicaSetFromPod(ctx, namespace, podName)
-		if err != nil {
-			return "", err
-		}
-		return c.getReplicaSetOwner(ctx, namespace, rsName)
+		return "Deployment", nil
 	case "StatefulSet":
 		return "StatefulSet", nil
 	default:
@@ -99,27 +97,10 @@ func (c *Client) getReplicaSetOwner(ctx context.Context, namespace, rsName strin
 	}
 
 	for _, owner := range rs.OwnerReferences {
-		return owner.Kind, nil
+		return owner.Name, nil
 	}
 
 	return "", fmt.Errorf("no owner found for replica set %q", rsName)
-}
-
-// TODO: maybe use k8s type, not string
-
-func (c *Client) getReplicaSetFromPod(ctx context.Context, namespace, podName string) (string, error) {
-	pod, err := c.ClientSet.CoreV1().Pods(namespace).Get(ctx, podName, metav1.GetOptions{})
-	if err != nil {
-		return "", fmt.Errorf("failed to get pod %q: %v", podName, err)
-	}
-
-	for _, owner := range pod.OwnerReferences {
-		if owner.Kind == "ReplicaSet" {
-			return owner.Name, nil
-		}
-	}
-
-	return "", nil
 }
 
 // FIXME: uint isnt a good idea, use what k8s use
@@ -129,20 +110,57 @@ func (c *Client) getReplicas(ctx context.Context, namespace, name string, kind s
 
 	switch kind {
 	case "Deployment":
-		rs, err := c.ClientSet.AppsV1().ReplicaSets(namespace).Get(ctx, name, metav1.GetOptions{})
+		dep, err := c.ClientSet.AppsV1().Deployments(namespace).Get(ctx, name, metav1.GetOptions{})
 		if err != nil {
-			return 0, fmt.Errorf("failed to get ReplicaSet %q: %v", name, err)
+			return 0, fmt.Errorf("failed to get deployment %q: %v", name, err)
 		}
-		replicas = rs.Spec.Replicas
+		replicas = dep.Spec.Replicas
 	case "StatefulSet":
 		sts, err := c.ClientSet.AppsV1().StatefulSets(namespace).Get(ctx, name, metav1.GetOptions{})
 		if err != nil {
-			return 0, fmt.Errorf("failed to get StatefulSet %q: %v", name, err)
+			return 0, fmt.Errorf("failed to get statefulset %q: %v", name, err)
 		}
 		replicas = sts.Spec.Replicas
 	default:
-		return 0, fmt.Errorf("unsupported kind: %q", kind)
+		return 0, fmt.Errorf("failed to get replicas, unsupported kind: %q", kind)
 	}
 
 	return uint(*replicas), nil
+}
+
+func (w *Workload) ScaleDown(ctx context.Context, clientset kubernetes.Interface, namespace, name, kind string) error {
+	return w.scale(ctx, clientset, namespace, name, kind, 0)
+}
+
+func (w *Workload) ScaleUp(ctx context.Context, clientset kubernetes.Interface, namespace, name, kind string, replicas int32) error {
+	return w.scale(ctx, clientset, namespace, name, kind, replicas)
+}
+
+func (w *Workload) scale(ctx context.Context, clientset kubernetes.Interface, namespace, name, kind string, replicas int32) error {
+	scale := &autoscalingv1.Scale{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+		Spec: autoscalingv1.ScaleSpec{
+			Replicas: replicas,
+		},
+	}
+
+	switch kind {
+	case "Deployment":
+		_, err := clientset.AppsV1().Deployments(namespace).UpdateScale(ctx, name, scale, metav1.UpdateOptions{})
+		if err != nil {
+			return fmt.Errorf("failed to scale down deployment %q: %v", name, err)
+		}
+	case "StatefulSet":
+		_, err := clientset.AppsV1().StatefulSets(namespace).UpdateScale(ctx, name, scale, metav1.UpdateOptions{DryRun: []string{"All"}})
+		if err != nil {
+			return fmt.Errorf("failed to scale down statefulset %q: %v", name, err)
+		}
+	default:
+		return fmt.Errorf("failed to scale down, unsupported kind: %q", kind)
+	}
+
+	return nil
 }

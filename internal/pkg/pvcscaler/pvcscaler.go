@@ -10,7 +10,7 @@ import (
 )
 
 type PVCscaler struct {
-	workloads       []k8s.Workload
+	workloads []k8s.Workload
 	scaleUpWaitTime time.Duration
 	storageClass    string
 }
@@ -61,6 +61,13 @@ func (p *PVCscaler) Run(ctx context.Context, kubeconfig, namespace string) error
 	close(errChan)
 
 	fmt.Println(p.workloads)
+
+	// for _, workload := range p.workloads {
+	// 	err := workload.ScaleDown(ctx, k8s.ClientSet, workload.Namespace, workload.Name, workload.Kind)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// }
 
 	for err := range errChan {
 		fmt.Printf("Error: %v\n", err)

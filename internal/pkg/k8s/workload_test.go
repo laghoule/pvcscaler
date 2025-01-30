@@ -14,6 +14,10 @@ func TestGetWorkloads(t *testing.T) {
 		t.Error(err)
 	}
 
+	dep := createDeployment()
+	_, err = c.ClientSet.AppsV1().Deployments(namespace).Create(context.TODO(), dep, metav1.CreateOptions{})
+	assert.NoError(t, err)
+
 	rs := createTestReplicaSet()
 	_, err = c.ClientSet.AppsV1().ReplicaSets(namespace).Create(context.TODO(), rs, metav1.CreateOptions{})
 	assert.NoError(t, err)
@@ -30,19 +34,19 @@ func TestGetWorkloads(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, 1, len(wloads))
-	assert.Equal(t, "nginx-deployment-7d475f5dd6", wloads[0].name)
-	assert.Equal(t, namespace, wloads[0].namespace)
+	assert.Equal(t, "nginx-deployment", wloads[0].Name)
+	assert.Equal(t, namespace, wloads[0].Namespace)
 }
 
 func TestGetReplicas(t *testing.T) {
 	c, err := NewTestClient()
 	assert.NoError(t, err)
 
-	rs := createTestReplicaSet()
-	_, err = c.ClientSet.AppsV1().ReplicaSets(namespace).Create(context.TODO(), rs, metav1.CreateOptions{})
+	dep := createDeployment()
+	_, err = c.ClientSet.AppsV1().Deployments(namespace).Create(context.TODO(), dep, metav1.CreateOptions{})
 	assert.NoError(t, err)
 
-	replicas, err := c.getReplicas(context.TODO(), rs.Namespace, rs.Name, "Deployment")
+	replicas, err := c.getReplicas(context.TODO(), dep.Namespace, dep.Name, "Deployment")
 	assert.NoError(t, err)
 	assert.Equal(t, uint(1), replicas)
 }
@@ -59,7 +63,24 @@ func TestGetWorkloadOwnerType(t *testing.T) {
 	_, err = c.ClientSet.CoreV1().Pods(namespace).Create(context.TODO(), pod, metav1.CreateOptions{})
 	assert.NoError(t, err)
 
-	ownerType, err := c.getWorkloadOwnerType(context.TODO(), pod.Namespace, pod.Name)
+	ownerType, err := c.getWorkloadOwnerKind(context.TODO(), pod.Namespace, pod.Name)
 	assert.NoError(t, err)
 	assert.Equal(t, "Deployment", ownerType)
 }
+
+// func TestScale(t *testing.T) {
+// 	c, err := NewTestClient()
+// 	assert.NoError(t, err)
+
+// 	dep := createDeployment()
+// 	_, err = c.ClientSet.AppsV1().Deployments(namespace).Create(context.TODO(), dep, metav1.CreateOptions{})
+// 	assert.NoError(t, err)
+
+// 	err = c.scale(context.TODO(), dep.Namespace, dep.Name, "Deployment", 2)
+// 	assert.NoError(t, err)
+
+	// FIXME
+	// _, err = c.ClientSet.AppsV1().Deployments(namespace).Get(context.TODO(), dep.Name, metav1.GetOptions{})
+	// assert.NoError(t, err)
+	// assert.Equal(t, int32(2), *dep.Spec.Replicas)
+//}

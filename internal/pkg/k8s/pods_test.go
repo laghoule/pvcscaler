@@ -19,6 +19,18 @@ func int32PTR(n int) *int32 {
 	return &i
 }
 
+func createDeployment() *appsv1.Deployment {
+	return &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "nginx-deployment",
+			Namespace: namespace,
+		},
+		Spec: appsv1.DeploymentSpec{
+			Replicas: int32PTR(1),
+		},
+	}
+}
+
 func createTestReplicaSet() *appsv1.ReplicaSet {
 	return &appsv1.ReplicaSet{
 		ObjectMeta: metav1.ObjectMeta{

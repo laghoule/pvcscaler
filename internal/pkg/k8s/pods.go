@@ -7,7 +7,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-
 // TODO: maybe use k8s type, not string
 
 func (c *Client) getPodOwnerKind(ctx context.Context, namespace, podName string) (string, error) {
@@ -29,8 +28,15 @@ func (c *Client) getPodOwnerName(ctx context.Context, namespace, podName string)
 		return "", fmt.Errorf("failed to get pod %q: %v", podName, err)
 	}
 
-	for _, owner := range pod.OwnerReferences {
-		return owner.Name, nil
+	for _, oref := range pod.OwnerReferences {
+		if oref.Kind == "ReplicaSet" {
+			owner, err := c.getReplicaSetOwner(ctx, namespace, oref.Name)
+			if err != nil {
+				return "", err
+			}
+			return owner, nil
+		}
+		return oref.Name, nil
 	}
 
 	return "", nil
