@@ -10,12 +10,12 @@ import (
 )
 
 type PVCscaler struct {
-	workloads []k8s.Workload
+	workloads       []k8s.Workload
 	scaleUpWaitTime time.Duration
 	storageClass    string
 }
 
-func NewPVCscaler(scaleUpWaitTime time.Duration, storageClass string) *PVCscaler {
+func NewPVCscaler(file string, scaleUpWaitTime time.Duration, storageClass string) *PVCscaler {
 	return &PVCscaler{
 		scaleUpWaitTime: scaleUpWaitTime,
 		storageClass:    storageClass,
@@ -38,6 +38,7 @@ func (p *PVCscaler) Run(ctx context.Context, kubeconfig, namespace string) error
 		namespaces = []string{namespace}
 	}
 
+	var dataset dataset
 	var wg sync.WaitGroup
 	var errChan = make(chan error, len(namespaces))
 
@@ -53,6 +54,7 @@ func (p *PVCscaler) Run(ctx context.Context, kubeconfig, namespace string) error
 				if err != nil {
 					errChan <- err
 				}
+				dataset.Workloads = append(dataset.Workloads, p.workloads...)
 			}
 		}(ns)
 	}

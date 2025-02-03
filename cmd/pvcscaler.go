@@ -44,7 +44,7 @@ func main() {
 
 	waitTimeDuration := time.Duration(*waitTime) * time.Second
 
-	pvcscaler := pvcscaler.NewPVCscaler(waitTimeDuration, *storageClass)
+	pvcscaler := pvcscaler.NewPVCscaler("/tmp/test.json", waitTimeDuration, *storageClass)
 
 	err := pvcscaler.Run(ctx, *kubeconfig, *namespace)
 	if err != nil {

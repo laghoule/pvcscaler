@@ -10,10 +10,10 @@ import (
 )
 
 type Workload struct {
-	Kind      string
-	Name      string
-	Namespace string
-	Replicas  uint
+	Kind      string `json:"kind"`
+	Name      string `json:"name"`
+	Namespace string `json:"namespace"`
+	Replicas  uint   `json:"replicas"`
 }
 
 func (c *Client) GetWorkloads(ctx context.Context, namespace, storageClass string) ([]Workload, error) {
