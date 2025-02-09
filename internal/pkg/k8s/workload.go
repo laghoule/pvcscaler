@@ -6,7 +6,6 @@ import (
 
 	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 )
 
 type Workload struct {
@@ -128,15 +127,15 @@ func (c *Client) getReplicas(ctx context.Context, namespace, name string, kind s
 	return uint(*replicas), nil
 }
 
-func (w *Workload) ScaleDown(ctx context.Context, clientset kubernetes.Interface, namespace, name, kind string) error {
-	return w.scale(ctx, clientset, namespace, name, kind, 0)
+func (w *Workload) ScaleDown(ctx context.Context, k8sClient *Client, namespace, name, kind string) error {
+	return w.scale(ctx, k8sClient, namespace, name, kind, 0)
 }
 
-func (w *Workload) ScaleUp(ctx context.Context, clientset kubernetes.Interface, namespace, name, kind string, replicas int32) error {
-	return w.scale(ctx, clientset, namespace, name, kind, replicas)
+func (w *Workload) ScaleUp(ctx context.Context, k8sClient *Client, namespace, name, kind string, replicas int32) error {
+	return w.scale(ctx, k8sClient, namespace, name, kind, replicas)
 }
 
-func (w *Workload) scale(ctx context.Context, clientset kubernetes.Interface, namespace, name, kind string, replicas int32) error {
+func (w *Workload) scale(ctx context.Context, k8sClient *Client, namespace, name, kind string, replicas int32) error {
 	scale := &autoscalingv1.Scale{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -147,14 +146,16 @@ func (w *Workload) scale(ctx context.Context, clientset kubernetes.Interface, na
 		},
 	}
 
+	dryRun := k8sClient.getDryRunUpdateOptionMetaV1()
+
 	switch kind {
 	case "Deployment":
-		_, err := clientset.AppsV1().Deployments(namespace).UpdateScale(ctx, name, scale, metav1.UpdateOptions{})
+		_, err := k8sClient.ClientSet.AppsV1().Deployments(namespace).UpdateScale(ctx, name, scale, dryRun)
 		if err != nil {
 			return fmt.Errorf("failed to scale down deployment %q: %v", name, err)
 		}
 	case "StatefulSet":
-		_, err := clientset.AppsV1().StatefulSets(namespace).UpdateScale(ctx, name, scale, metav1.UpdateOptions{DryRun: []string{"All"}})
+		_, err := k8sClient.ClientSet.AppsV1().StatefulSets(namespace).UpdateScale(ctx, name, scale, dryRun)
 		if err != nil {
 			return fmt.Errorf("failed to scale down statefulset %q: %v", name, err)
 		}

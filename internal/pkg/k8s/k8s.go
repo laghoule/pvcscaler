@@ -10,9 +10,10 @@ import (
 
 type Client struct {
 	ClientSet kubernetes.Interface
+	DryRun    bool
 }
 
-func New(kubeconfig string) (*Client, error) {
+func New(kubeconfig string, dryRun bool) (*Client, error) {
 	if kubeconfig == "" {
 		kubeconfig = clientcmd.RecommendedHomeFile
 	}
@@ -49,4 +50,10 @@ func (c *Client) GetAllNamespaces(ctx context.Context) ([]string, error) {
 	}
 
 	return namespaceNames, nil
+}
+
+func (c *Client) getDryRunUpdateOptionMetaV1() metav1.UpdateOptions {
+	return metav1.UpdateOptions{
+		DryRun: []string{metav1.DryRunAll},
+	}
 }

@@ -55,7 +55,7 @@ func down() {
 
 	// FIXME: add file check
 
-	pvcscaler, err := pvcscaler.New(kubeconfig, namespaces, storageClass)
+	pvcscaler, err := pvcscaler.New(kubeconfig, namespaces, storageClass, dryRun)
 	if err != nil {
 		fmt.Printf("error: %v\n", err)
 		os.Exit(1)

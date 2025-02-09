@@ -10,6 +10,8 @@ import (
 
 var (
 	kubeconfig string
+  dryRun     bool
+
 	version    = "devel"
 	gitCommit  = "0000000000000000000000000000000000000000"
 	buildDate  = time.DateTime
@@ -35,4 +37,5 @@ func init() {
 	}
 
 	rootCmd.PersistentFlags().StringP("kubeconfig", "k", kubeconfig, "path to kubeconfig")
+  rootCmd.PersistentFlags().BoolVarP(&dryRun, "dry-run", "d", false, "dry run mode")
 }

@@ -9,20 +9,23 @@ import (
 )
 
 type PVCscaler struct {
-	k8sClient    *k8s.Client
+	k8sClient *k8s.Client
+	dryRun    bool
+
 	workloads    []k8s.Workload
 	namespaces   []string
 	storageClass string
 }
 
-func New(kubeconfig string, namespaces []string, storageClass string) (*PVCscaler, error) {
-	k8sClient, err := k8s.New(kubeconfig)
+func New(kubeconfig string, namespaces []string, storageClass string, dryRun bool) (*PVCscaler, error) {
+	k8sClient, err := k8s.New(kubeconfig, dryRun)
 	if err != nil {
 		return nil, err
 	}
 
 	return &PVCscaler{
 		k8sClient:    k8sClient,
+		dryRun:       dryRun,
 		namespaces:   namespaces,
 		storageClass: storageClass,
 	}, nil
@@ -75,7 +78,7 @@ func (p *PVCscaler) Down(ctx context.Context, outputFile string) error {
 
 	for _, workload := range p.workloads {
 		// TODO: p.k8sClient.ClientSet ugly
-		err := workload.ScaleDown(ctx, p.k8sClient.ClientSet, workload.Namespace, workload.Name, workload.Kind)
+		err := workload.ScaleDown(ctx, p.k8sClient, workload.Namespace, workload.Name, workload.Kind)
 		if err != nil {
 			return err
 		}
@@ -104,7 +107,7 @@ func (p *PVCscaler) Up(ctx context.Context, outputFile string) error {
 	workloads := dataset.toWorkloads()
 	for _, workload := range workloads {
 		// FIXME: workloads.Replicas
-		err := workload.ScaleUp(ctx, p.k8sClient.ClientSet, workload.Namespace, workload.Name, workload.Kind, int32(workload.Replicas))
+		err := workload.ScaleUp(ctx, p.k8sClient, workload.Namespace, workload.Name, workload.Kind, int32(workload.Replicas))
 		if err != nil {
 			return err
 		}

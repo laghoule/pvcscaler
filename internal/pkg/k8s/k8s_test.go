@@ -17,7 +17,7 @@ func NewTestClient() (*Client, error) {
 }
 
 func TestNewClient(t *testing.T) {
-	client, err := New("")
+	client, err := New("", false)
 	assert.NoError(t, err)
 	assert.NotNil(t, client)
 }
