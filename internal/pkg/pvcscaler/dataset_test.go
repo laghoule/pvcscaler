@@ -23,7 +23,7 @@ func createDataset() dataset {
 func TestReadWorkloadsFromFile(t *testing.T) {
 	expected := createDataset()
 	dataset := dataset{}
-	err := dataset.ReadDatasetFromFile("testdata/workloads.json")
+	err := dataset.ReadFromFile("testdata/pvcscaler.json")
 	assert.NoError(t, err)
 	assert.Equal(t, expected, dataset)
 }

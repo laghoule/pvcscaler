@@ -4,41 +4,40 @@ import (
 	"context"
 	"fmt"
 	"sync"
-	"time"
 
 	"laghoule/pvcscaler/internal/pkg/k8s"
 )
 
 type PVCscaler struct {
-	workloads       []k8s.Workload
-	scaleUpWaitTime time.Duration
-	storageClass    string
+	k8sClient    *k8s.Client
+	workloads    []k8s.Workload
+	namespaces   []string
+	storageClass string
 }
 
-func NewPVCscaler(file string, scaleUpWaitTime time.Duration, storageClass string) *PVCscaler {
-	return &PVCscaler{
-		scaleUpWaitTime: scaleUpWaitTime,
-		storageClass:    storageClass,
-	}
-}
-
-func (p *PVCscaler) Run(ctx context.Context, kubeconfig, namespace string) error {
-	k8s, err := k8s.New(kubeconfig)
+func New(kubeconfig string, namespaces []string, storageClass string) (*PVCscaler, error) {
+	k8sClient, err := k8s.New(kubeconfig)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
-	var namespaces []string
-	if namespace == "all" {
-		namespaces, err = k8s.GetAllNamespaces(ctx)
+	return &PVCscaler{
+		k8sClient:    k8sClient,
+		namespaces:   namespaces,
+		storageClass: storageClass,
+	}, nil
+}
+
+func (p *PVCscaler) getWorkloads(ctx context.Context, k8sClient *k8s.Client, namespaces []string, storageClass string) error {
+	var err error
+
+	if len(namespaces) == 1 && namespaces[0] == "all" {
+		namespaces, err = k8sClient.GetAllNamespaces(ctx)
 		if err != nil {
 			panic(err)
 		}
-	} else {
-		namespaces = []string{namespace}
 	}
 
-	var dataset dataset
 	var wg sync.WaitGroup
 	var errChan = make(chan error, len(namespaces))
 
@@ -50,11 +49,10 @@ func (p *PVCscaler) Run(ctx context.Context, kubeconfig, namespace string) error
 			case <-ctx.Done():
 				return
 			default:
-				p.workloads, err = k8s.GetWorkloads(ctx, ns, p.storageClass)
+				p.workloads, err = k8sClient.GetWorkloads(ctx, ns, storageClass)
 				if err != nil {
 					errChan <- err
 				}
-				dataset.Workloads = append(dataset.Workloads, p.workloads...)
 			}
 		}(ns)
 	}
@@ -62,17 +60,54 @@ func (p *PVCscaler) Run(ctx context.Context, kubeconfig, namespace string) error
 	wg.Wait()
 	close(errChan)
 
-	fmt.Println(p.workloads)
-
-	// for _, workload := range p.workloads {
-	// 	err := workload.ScaleDown(ctx, k8s.ClientSet, workload.Namespace, workload.Name, workload.Kind)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// }
-
 	for err := range errChan {
-		fmt.Printf("Error: %v\n", err)
+		fmt.Printf("error: %v\n", err)
+	}
+
+	return nil
+}
+
+func (p *PVCscaler) Down(ctx context.Context, outputFile string) error {
+	err := p.getWorkloads(ctx, p.k8sClient, p.namespaces, p.storageClass)
+	if err != nil {
+		return err
+	}
+
+	for _, workload := range p.workloads {
+		// TODO: p.k8sClient.ClientSet ugly
+		err := workload.ScaleDown(ctx, p.k8sClient.ClientSet, workload.Namespace, workload.Name, workload.Kind)
+		if err != nil {
+			return err
+		}
+	}
+
+	dataset := getDataset(p.workloads)
+
+	if outputFile != "" {
+		err = dataset.WritetToFile(outputFile)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (p *PVCscaler) Up(ctx context.Context, outputFile string) error {
+	var dataset dataset
+
+	err := dataset.ReadFromFile(outputFile)
+	if err != nil {
+		return err
+	}
+
+	workloads := dataset.toWorkloads()
+	for _, workload := range workloads {
+		// FIXME: workloads.Replicas
+		err := workload.ScaleUp(ctx, p.k8sClient.ClientSet, workload.Namespace, workload.Name, workload.Kind, int32(workload.Replicas))
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

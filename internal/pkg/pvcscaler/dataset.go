@@ -12,7 +12,19 @@ type dataset struct {
 	Workloads []k8s.Workload `json:"workloads"`
 }
 
-func (d *dataset) WriteDatasetToFile(filename string) error {
+func getDataset(worloads []k8s.Workload) dataset {
+	var dataset dataset
+	dataset.Workloads = append(dataset.Workloads, worloads...)
+
+	return dataset
+}
+
+// TODO: weird name
+func (d *dataset) toWorkloads() []k8s.Workload {
+	return d.Workloads
+}
+
+func (d *dataset) WritetToFile(filename string) error {
 	file, err := os.Create(filename)
 	if err != nil {
 		return err
@@ -32,7 +44,7 @@ func (d *dataset) WriteDatasetToFile(filename string) error {
 	return nil
 }
 
-func (d *dataset) ReadDatasetFromFile(filename string) error {
+func (d *dataset) ReadFromFile(filename string) error {
 	data, err := os.ReadFile(filename)
 	if err != nil {
 		return err
