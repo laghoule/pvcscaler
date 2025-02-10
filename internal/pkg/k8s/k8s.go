@@ -35,6 +35,7 @@ func New(kubeconfig string, dryRun bool) (*Client, error) {
 
 	return &Client{
 		ClientSet: clientset,
+		DryRun:    dryRun,
 	}, nil
 }
 
@@ -53,7 +54,11 @@ func (c *Client) GetAllNamespaces(ctx context.Context) ([]string, error) {
 }
 
 func (c *Client) getDryRunUpdateOptionMetaV1() metav1.UpdateOptions {
-	return metav1.UpdateOptions{
-		DryRun: []string{metav1.DryRunAll},
+	if c.DryRun {
+		return metav1.UpdateOptions{
+			DryRun: []string{metav1.DryRunAll},
+		}
 	}
+
+	return metav1.UpdateOptions{}
 }

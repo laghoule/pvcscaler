@@ -44,3 +44,34 @@ func TestGetAllNamespaces(t *testing.T) {
 	assert.NotNil(t, namespaces)
 	assert.Equal(t, "default", namespaces[0])
 }
+
+func TestClientGetDryRunUpdateOptionMetaV1(t *testing.T) {
+	tests := []struct {
+		name   string
+		dryRun bool
+		want   metav1.UpdateOptions
+	}{
+		{
+			name:   "with dry run enabled",
+			dryRun: true,
+			want: metav1.UpdateOptions{
+				DryRun: []string{metav1.DryRunAll},
+			},
+		},
+		{
+			name:   "with dry run disabled",
+			dryRun: false,
+			want:   metav1.UpdateOptions{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := &Client{
+				DryRun: tt.dryRun,
+			}
+			got := c.getDryRunUpdateOptionMetaV1()
+			assert.Equal(t, got, tt.want)
+		})
+	}
+}

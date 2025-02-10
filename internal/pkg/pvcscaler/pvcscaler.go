@@ -52,10 +52,12 @@ func (p *PVCscaler) getWorkloads(ctx context.Context, k8sClient *k8s.Client, nam
 			case <-ctx.Done():
 				return
 			default:
-				p.workloads, err = k8sClient.GetWorkloads(ctx, ns, storageClass)
+				workloads, err := k8sClient.GetWorkloads(ctx, ns, storageClass)
 				if err != nil {
 					errChan <- err
+					return
 				}
+				p.workloads = append(p.workloads, workloads...)
 			}
 		}(ns)
 	}
