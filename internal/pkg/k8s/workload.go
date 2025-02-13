@@ -56,7 +56,6 @@ func (c *Client) GetWorkloads(ctx context.Context, namespace, storageClass strin
 				return nil, err
 			}
 
-			fmt.Printf("Pod %s (%s: %s) use a PVC of storage class %q\n", pod.Name, ownerKind, ownerName, storageClass)
 			workloads = append(workloads, Workload{
 				Kind:      ownerKind,
 				Name:      ownerName,

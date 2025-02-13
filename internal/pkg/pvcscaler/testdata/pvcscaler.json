@@ -1,0 +1,8 @@
+[
+  {
+    "kind": "Deployment",
+    "name": "prometheus-grafana",
+    "namespace": "monitoring",
+    "replicas": 1
+  }
+]

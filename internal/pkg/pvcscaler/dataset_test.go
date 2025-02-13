@@ -1,6 +1,7 @@
 package pvcscaler
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -32,7 +33,7 @@ func TestReadFromFile(t *testing.T) {
 }
 
 func TestWriteToFile(t *testing.T) {
-	dataset := dataset{}
+	dataset := createDataset()
 	tmpDir := t.TempDir()
 
 	err := dataset.WritetToFile(filepath.Join(tmpDir, "pvcscaler.json"))
@@ -40,7 +41,9 @@ func TestWriteToFile(t *testing.T) {
 
 	expected, err := os.ReadFile("testdata/pvcscaler.json")
 	assert.NoError(t, err)
-	
+
+	fmt.Println(tmpDir)
+
 	actual, err := os.ReadFile(filepath.Join(tmpDir, "pvcscaler.json"))
 	assert.NoError(t, err)
 	assert.Equal(t, string(expected), string(actual))

@@ -78,8 +78,10 @@ func (p *PVCscaler) Down(ctx context.Context, outputFile string) error {
 		return err
 	}
 
+	fmt.Println("Scaling down these workloads:")
+
 	for _, workload := range p.workloads {
-		// TODO: p.k8sClient.ClientSet ugly
+		fmt.Printf(" ✴️ %s %s/%s\n", workload.Kind, workload.Namespace, workload.Name)
 		err := workload.ScaleDown(ctx, p.k8sClient, workload.Namespace, workload.Name, workload.Kind)
 		if err != nil {
 			return err
@@ -106,9 +108,11 @@ func (p *PVCscaler) Up(ctx context.Context, outputFile string) error {
 		return err
 	}
 
+	fmt.Println("Scaling up these workloads:")
+
 	workloads := dataset.toWorkloads()
 	for _, workload := range workloads {
-		// FIXME: workloads.Replicas
+		fmt.Printf(" ✴️ %s %s/%s\n", workload.Kind, workload.Namespace, workload.Name)
 		err := workload.ScaleUp(ctx, p.k8sClient, workload.Namespace, workload.Name, workload.Kind, int32(workload.Replicas))
 		if err != nil {
 			return err
