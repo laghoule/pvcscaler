@@ -91,7 +91,7 @@ func (p *PVCscaler) Down(ctx context.Context, outputFile string) error {
 	dataset := getDataset(p.workloads)
 
 	if outputFile != "" {
-		err = dataset.WritetToFile(outputFile)
+		err = dataset.WriteToFile(outputFile)
 		if err != nil {
 			return err
 		}
