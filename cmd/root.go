@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"path/filepath"
-  "time"
+	"time"
 
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/util/homedir"
@@ -10,11 +10,11 @@ import (
 
 var (
 	kubeconfig string
-  dryRun     bool
+	dryRun     bool
 
-	version    = "devel"
-	gitCommit  = "0000000000000000000000000000000000000000"
-	buildDate  = time.DateTime
+	version   = "devel"
+	gitCommit = "0000000000000000000000000000000000000000"
+	buildDate = time.DateTime
 )
 
 var rootCmd = &cobra.Command{
@@ -37,5 +37,5 @@ func init() {
 	}
 
 	rootCmd.PersistentFlags().StringP("kubeconfig", "k", kubeconfig, "path to kubeconfig")
-  rootCmd.PersistentFlags().BoolVarP(&dryRun, "dry-run", "d", false, "dry run mode")
+	rootCmd.PersistentFlags().BoolVarP(&dryRun, "dry-run", "d", false, "dry run mode")
 }

@@ -13,9 +13,9 @@ import (
 )
 
 var (
-	namespaces []string
+	namespaces   []string
 	storageClass string
-	outputFile string
+	outputFile   string
 )
 
 var downCmd = &cobra.Command{
@@ -48,7 +48,7 @@ func down() {
 		cancel()
 	}()
 
-	if ! validNamespaces(namespaces) {
+	if !validNamespaces(namespaces) {
 		fmt.Printf("error: invalid namespace, cannot mix `all` with other namespace\n")
 		os.Exit(1)
 	}
@@ -66,7 +66,7 @@ func down() {
 		fmt.Printf("error: %v\n", err)
 		os.Exit(1)
 	}
-	
+
 }
 
 func validNamespaces(namespaces []string) bool {

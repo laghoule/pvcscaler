@@ -79,8 +79,8 @@ func TestGetWorkloadOwnerType(t *testing.T) {
 // 	err = c.scale(context.TODO(), dep.Namespace, dep.Name, "Deployment", 2)
 // 	assert.NoError(t, err)
 
-	// FIXME
-	// _, err = c.ClientSet.AppsV1().Deployments(namespace).Get(context.TODO(), dep.Name, metav1.GetOptions{})
-	// assert.NoError(t, err)
-	// assert.Equal(t, int32(2), *dep.Spec.Replicas)
+// FIXME
+// _, err = c.ClientSet.AppsV1().Deployments(namespace).Get(context.TODO(), dep.Name, metav1.GetOptions{})
+// assert.NoError(t, err)
+// assert.Equal(t, int32(2), *dep.Spec.Replicas)
 //}
