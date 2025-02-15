@@ -1,5 +1,11 @@
 # PVCScaler
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/laghoule/pvcscaler)](https://goreportcard.com/report/github.com/laghoule/pvcscaler)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=laghoule_pvcscaler&metric=coverage)](https://sonarcloud.io/summary/new_code?id=laghoule_pvcscaler)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=laghoule_pvcscaler&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=laghoule_pvcscaler)
+[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=laghoule_pvcscaler&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=laghoule_pvcscaler)
+
+
 PVCScaler is a command-line tool for scaling pods with Persistent Volume Claims (PVC) in Kubernetes.
 
 ## Features
