@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -39,16 +40,96 @@ func TestGetWorkloads(t *testing.T) {
 }
 
 func TestGetReplicas(t *testing.T) {
-	c, err := NewTestClient()
-	assert.NoError(t, err)
+	type test[T any] struct {
+		name     string
+		workload T
+		replicas uint
+		error    bool
+	}
 
-	dep := createDeployment()
-	_, err = c.ClientSet.AppsV1().Deployments(namespace).Create(context.TODO(), dep, metav1.CreateOptions{})
-	assert.NoError(t, err)
+	testsDep := []test[*appsv1.Deployment]{
+		{
+			name:     "deployment",
+			workload: createDeployment(),
+			replicas: 1,
+			error:    false,
+		},
+		{
+			name:     "deployment error",
+			workload: &appsv1.Deployment{},
+			replicas: 0,
+			error:    true,
+		},
+	}
 
-	replicas, err := c.getReplicas(context.TODO(), dep.Namespace, dep.Name, "Deployment")
-	assert.NoError(t, err)
-	assert.Equal(t, uint(1), replicas)
+	testsSts := []test[*appsv1.StatefulSet]{
+		{
+			name:     "statefulset",
+			workload: createStatefulSet(),
+			replicas: 1,
+			error:    false,
+		},
+		{
+			name:     "statefulset error",
+			workload: &appsv1.StatefulSet{},
+			replicas: 0,
+			error:    true,
+		},
+	}
+
+	testUnsupportedKind := test[*appsv1.DaemonSet]{
+		name:     "unknown kind",
+		workload: createDaemonSet(),
+		replicas: 0,
+		error:    true,
+	}
+
+	for _, tt := range testsDep {
+		t.Run(tt.name, func(t *testing.T) {
+			c, err := NewTestClient()
+			assert.NoError(t, err)
+
+			_, err = c.ClientSet.AppsV1().Deployments(namespace).Create(context.TODO(), tt.workload, metav1.CreateOptions{})
+			assert.NoError(t, err)
+
+			replicas, err := c.getReplicas(context.TODO(), tt.workload.Namespace, tt.workload.Name, "Deployment")
+			if tt.error {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.replicas, replicas)
+			}
+		})
+	}
+
+	for _, tt := range testsSts {
+		t.Run(tt.name, func(t *testing.T) {
+			c, err := NewTestClient()
+			assert.NoError(t, err)
+
+			_, err = c.ClientSet.AppsV1().StatefulSets(namespace).Create(context.TODO(), tt.workload, metav1.CreateOptions{})
+			assert.NoError(t, err)
+
+			replicas, err := c.getReplicas(context.TODO(), tt.workload.Namespace, tt.workload.Name, "StatefulSet")
+			if tt.error {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.replicas, replicas)
+			}
+		})
+	}
+
+	t.Run(testUnsupportedKind.name, func(t *testing.T) {
+		c, err := NewTestClient()
+		assert.NoError(t, err)
+
+		_, err = c.ClientSet.AppsV1().DaemonSets(namespace).Create(context.TODO(), testUnsupportedKind.workload, metav1.CreateOptions{})
+		assert.NoError(t, err)
+
+		_, err = c.getReplicas(context.TODO(), testUnsupportedKind.workload.Namespace, testUnsupportedKind.workload.Name, "DaemonSet")
+		assert.Error(t, err)
+	})
 }
 
 func TestGetWorkloadOwnerType(t *testing.T) {

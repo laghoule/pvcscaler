@@ -34,19 +34,19 @@ go build -o pvcscaler
 
 ### Basic Commands
 
-- **Scale Up**
+- **Scale up**
 
 ```bash
 ./pvcscaler up -i <inputFile>
 ```
 
-- **Scale Down**
+- **Scale down**
 
 ```bash
 ./pvcscaler down -n <namespace> -s <storageClass> -o <outputFile>
 ```
 
-- **Show Version**
+- **Show version**
 
 ```bash
 ./pvcscaler version
