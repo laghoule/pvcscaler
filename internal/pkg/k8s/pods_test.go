@@ -31,6 +31,7 @@ func createDeployment() *appsv1.Deployment {
 	}
 }
 
+// FIXME: change name
 func createTestReplicaSet() *appsv1.ReplicaSet {
 	return &appsv1.ReplicaSet{
 		ObjectMeta: metav1.ObjectMeta{
@@ -82,6 +83,7 @@ func createDaemonSet() *appsv1.DaemonSet {
 	}
 }
 
+// FIXME: change name
 func createTestPodWithPVC() *corev1.Pod {
 	return &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
@@ -103,6 +105,36 @@ func createTestPodWithPVC() *corev1.Pod {
 							ClaimName: "pvc-0c2e9fda-e8e6-11e8-8c05-000c29c3a172",
 						},
 					},
+				},
+			},
+		},
+	}
+}
+
+func createStatefulSetPod() *corev1.Pod {
+	return &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "nginx-statefulset-0",
+			Namespace: "default",
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					Kind: "StatefulSet",
+					Name: "nginx-statefulset",
+				},
+			},
+		},
+	}
+}
+
+func createDaemonSetPod() *corev1.Pod {
+	return &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "nginx-daemonset-7d475f5dd6",
+			Namespace: "default",
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					Kind: "DaemonSet",
+					Name: "nginx-daemonset",
 				},
 			},
 		},
