@@ -15,17 +15,9 @@ func TestGetWorkloads(t *testing.T) {
 		t.Error(err)
 	}
 
-	dep := createDeployment()
-	_, err = c.ClientSet.AppsV1().Deployments(namespace).Create(context.TODO(), dep, metav1.CreateOptions{})
-	assert.NoError(t, err)
-
-	rs := createTestReplicaSet()
-	_, err = c.ClientSet.AppsV1().ReplicaSets(namespace).Create(context.TODO(), rs, metav1.CreateOptions{})
-	assert.NoError(t, err)
-
-	pod := createTestPodWithPVC()
-	_, err = c.ClientSet.CoreV1().Pods(namespace).Create(context.TODO(), pod, metav1.CreateOptions{})
-	assert.NoError(t, err)
+	createDeployment(c.ClientSet)
+	createReplicaSet(c.ClientSet)
+	createPodWithPVC(c.ClientSet)
 
 	pvc := createTestPVC("pvc-0c2e9fda-e8e6-11e8-8c05-000c29c3a172", namespace, "standard")
 	_, err = c.ClientSet.CoreV1().PersistentVolumeClaims(namespace).Create(context.TODO(), pvc, metav1.CreateOptions{})
@@ -43,21 +35,24 @@ func TestGetReplicas(t *testing.T) {
 	type test[T any] struct {
 		name     string
 		workload T
-		replicas uint
+		expected uint
 		error    bool
 	}
+
+	c, err := NewTestClient()
+	assert.NoError(t, err)
 
 	testsDep := []test[*appsv1.Deployment]{
 		{
 			name:     "deployment",
-			workload: createDeployment(),
-			replicas: 1,
+			workload: createDeployment(c.ClientSet),
+			expected: 1,
 			error:    false,
 		},
 		{
 			name:     "deployment error",
 			workload: &appsv1.Deployment{},
-			replicas: 0,
+			expected: 0,
 			error:    true,
 		},
 	}
@@ -65,22 +60,22 @@ func TestGetReplicas(t *testing.T) {
 	testsSts := []test[*appsv1.StatefulSet]{
 		{
 			name:     "statefulset",
-			workload: createStatefulSet(),
-			replicas: 1,
+			workload: createStatefulSet(c.ClientSet),
+			expected: 1,
 			error:    false,
 		},
 		{
 			name:     "statefulset error",
 			workload: &appsv1.StatefulSet{},
-			replicas: 0,
+			expected: 0,
 			error:    true,
 		},
 	}
 
 	testUnsupportedKind := test[*appsv1.DaemonSet]{
 		name:     "unknown kind",
-		workload: createDaemonSet(),
-		replicas: 0,
+		workload: createDaemonSet(c.ClientSet),
+		expected: 0,
 		error:    true,
 	}
 
@@ -92,39 +87,30 @@ func TestGetReplicas(t *testing.T) {
 			_, err = c.ClientSet.AppsV1().Deployments(namespace).Create(context.TODO(), tt.workload, metav1.CreateOptions{})
 			assert.NoError(t, err)
 
-			replicas, err := c.getReplicas(context.TODO(), tt.workload.Namespace, tt.workload.Name, "Deployment")
+			actual, err := c.getReplicas(context.TODO(), tt.workload.Namespace, tt.workload.Name, "Deployment")
 			if tt.error {
 				assert.Error(t, err)
 			} else {
 				assert.NoError(t, err)
-				assert.Equal(t, tt.replicas, replicas)
+				assert.Equal(t, tt.expected, actual)
 			}
 		})
 	}
 
 	for _, tt := range testsSts {
 		t.Run(tt.name, func(t *testing.T) {
-			c, err := NewTestClient()
-			assert.NoError(t, err)
-
-			_, err = c.ClientSet.AppsV1().StatefulSets(namespace).Create(context.TODO(), tt.workload, metav1.CreateOptions{})
-			assert.NoError(t, err)
-
-			replicas, err := c.getReplicas(context.TODO(), tt.workload.Namespace, tt.workload.Name, "StatefulSet")
+			actual, err := c.getReplicas(context.TODO(), tt.workload.Namespace, tt.workload.Name, "StatefulSet")
 			if tt.error {
 				assert.Error(t, err)
 			} else {
 				assert.NoError(t, err)
-				assert.Equal(t, tt.replicas, replicas)
+				assert.Equal(t, tt.expected, actual)
 			}
 		})
 	}
 
 	t.Run(testUnsupportedKind.name, func(t *testing.T) {
 		c, err := NewTestClient()
-		assert.NoError(t, err)
-
-		_, err = c.ClientSet.AppsV1().DaemonSets(namespace).Create(context.TODO(), testUnsupportedKind.workload, metav1.CreateOptions{})
 		assert.NoError(t, err)
 
 		_, err = c.getReplicas(context.TODO(), testUnsupportedKind.workload.Namespace, testUnsupportedKind.workload.Name, "DaemonSet")
@@ -134,47 +120,50 @@ func TestGetReplicas(t *testing.T) {
 
 func TestGetWorkloadOwnerKind(t *testing.T) {
 	type test[T any] struct {
-		name      string
-		workload  T
-		ownerType string
-		error     bool
+		name     string
+		workload T
+		expected string
+		error    bool
 	}
+
+	c, err := NewTestClient()
+	assert.NoError(t, err)
 
 	testsDep := []test[*appsv1.ReplicaSet]{
 		{
-			name:      "deployment",
-			workload:  createTestReplicaSet(),
-			ownerType: "Deployment",
-			error:     false,
+			name:     "deployment",
+			workload: createReplicaSet(c.ClientSet),
+			expected: "Deployment",
+			error:    false,
 		},
 		{
-			name:      "deployment error",
-			workload:  &appsv1.ReplicaSet{},
-			ownerType: "",
-			error:     true,
+			name:     "deployment error",
+			workload: &appsv1.ReplicaSet{},
+			expected: "",
+			error:    true,
 		},
 	}
 
 	testsSts := []test[*appsv1.StatefulSet]{
 		{
-			name:      "statefulset",
-			workload:  createStatefulSet(),
-			ownerType: "StatefulSet",
-			error:     false,
+			name:     "statefulset",
+			workload: createStatefulSet(c.ClientSet),
+			expected: "StatefulSet",
+			error:    false,
 		},
 		{
-			name:      "statefulset error",
-			workload:  &appsv1.StatefulSet{},
-			ownerType: "",
-			error:     true,
+			name:     "statefulset error",
+			workload: &appsv1.StatefulSet{},
+			expected: "",
+			error:    true,
 		},
 	}
 
 	testUnsupportedKind := test[*appsv1.DaemonSet]{
-		name:      "unknown kind",
-		workload:  createDaemonSet(),
-		ownerType: "",
-		error:     true,
+		name:     "unknown kind",
+		workload: createDaemonSet(c.ClientSet),
+		expected: "",
+		error:    true,
 	}
 
 	for _, tt := range testsDep {
@@ -182,19 +171,13 @@ func TestGetWorkloadOwnerKind(t *testing.T) {
 			c, err := NewTestClient()
 			assert.NoError(t, err)
 
-			_, err = c.ClientSet.AppsV1().ReplicaSets(namespace).Create(context.TODO(), tt.workload, metav1.CreateOptions{})
-			assert.NoError(t, err)
-
-			pod := createTestPodWithPVC()
-			_, err = c.ClientSet.CoreV1().Pods(namespace).Create(context.TODO(), pod, metav1.CreateOptions{})
-			assert.NoError(t, err)
-
-			ownerType, err := c.getWorkloadOwnerKind(context.TODO(), tt.workload.Namespace, pod.Name)
+			pod := createPodWithPVC(c.ClientSet)
+			actual, err := c.getWorkloadOwnerKind(context.TODO(), tt.workload.Namespace, pod.Name)
 			if tt.error {
 				assert.Error(t, err)
 			} else {
 				assert.NoError(t, err)
-				assert.Equal(t, tt.ownerType, ownerType)
+				assert.Equal(t, tt.expected, actual)
 			}
 		})
 	}
@@ -204,19 +187,16 @@ func TestGetWorkloadOwnerKind(t *testing.T) {
 			c, err := NewTestClient()
 			assert.NoError(t, err)
 
-			_, err = c.ClientSet.AppsV1().StatefulSets(namespace).Create(context.TODO(), tt.workload, metav1.CreateOptions{})
-			assert.NoError(t, err)
-
 			pod := createStatefulSetPod()
 			_, err = c.ClientSet.CoreV1().Pods(namespace).Create(context.TODO(), pod, metav1.CreateOptions{})
 			assert.NoError(t, err)
 
-			ownerType, err := c.getWorkloadOwnerKind(context.TODO(), tt.workload.Namespace, pod.Name)
+			actual, err := c.getWorkloadOwnerKind(context.TODO(), tt.workload.Namespace, pod.Name)
 			if tt.error {
 				assert.Error(t, err)
 			} else {
 				assert.NoError(t, err)
-				assert.Equal(t, tt.ownerType, ownerType)
+				assert.Equal(t, tt.expected, actual)
 			}
 		})
 	}
@@ -225,13 +205,7 @@ func TestGetWorkloadOwnerKind(t *testing.T) {
 		c, err := NewTestClient()
 		assert.NoError(t, err)
 
-		_, err = c.ClientSet.AppsV1().DaemonSets(namespace).Create(context.TODO(), testUnsupportedKind.workload, metav1.CreateOptions{})
-		assert.NoError(t, err)
-
-		pod := createDaemonSetPod()
-		_, err = c.ClientSet.CoreV1().Pods(namespace).Create(context.TODO(), pod, metav1.CreateOptions{})
-		assert.NoError(t, err)
-
+		pod := createDaemonSetPod(c.ClientSet)
 		_, err = c.getWorkloadOwnerKind(context.TODO(), testUnsupportedKind.workload.Namespace, pod.Name)
 		assert.Error(t, err)
 	})

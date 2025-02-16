@@ -8,6 +8,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
 const (
@@ -19,8 +20,8 @@ func int32PTR(n int) *int32 {
 	return &i
 }
 
-func createDeployment() *appsv1.Deployment {
-	return &appsv1.Deployment{
+func createDeployment(c kubernetes.Interface) *appsv1.Deployment {
+	depObj := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "nginx-deployment",
 			Namespace: namespace,
@@ -29,11 +30,13 @@ func createDeployment() *appsv1.Deployment {
 			Replicas: int32PTR(1),
 		},
 	}
+	dep, _ := c.AppsV1().Deployments(namespace).Create(context.Background(), depObj, metav1.CreateOptions{})
+	return dep
 }
 
 // FIXME: change name
-func createTestReplicaSet() *appsv1.ReplicaSet {
-	return &appsv1.ReplicaSet{
+func createReplicaSet(c kubernetes.Interface) *appsv1.ReplicaSet {
+	rsObj := &appsv1.ReplicaSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "nginx-deployment-7d475f5dd6",
 			Namespace: namespace,
@@ -48,10 +51,12 @@ func createTestReplicaSet() *appsv1.ReplicaSet {
 			Replicas: int32PTR(1),
 		},
 	}
+	rs, _ := c.AppsV1().ReplicaSets(namespace).Create(context.Background(), rsObj, metav1.CreateOptions{})
+	return rs
 }
 
-func createStatefulSet() *appsv1.StatefulSet {
-	return &appsv1.StatefulSet{
+func createStatefulSet(c kubernetes.Interface) *appsv1.StatefulSet {
+	stsObj := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "nginx-statefulset",
 			Namespace: namespace,
@@ -60,10 +65,12 @@ func createStatefulSet() *appsv1.StatefulSet {
 			Replicas: int32PTR(1),
 		},
 	}
+	sts, _ := c.AppsV1().StatefulSets(namespace).Create(context.Background(), stsObj, metav1.CreateOptions{})
+	return sts
 }
 
-func createDaemonSet() *appsv1.DaemonSet {
-	return &appsv1.DaemonSet{
+func createDaemonSet(c kubernetes.Interface) *appsv1.DaemonSet {
+	dsObj := &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "nginx-daemonset",
 			Namespace: namespace,
@@ -81,11 +88,13 @@ func createDaemonSet() *appsv1.DaemonSet {
 			},
 		},
 	}
+	ds, _ := c.AppsV1().DaemonSets(namespace).Create(context.Background(), dsObj, metav1.CreateOptions{})
+	return ds
 }
 
 // FIXME: change name
-func createTestPodWithPVC() *corev1.Pod {
-	return &corev1.Pod{
+func createPodWithPVC(c kubernetes.Interface) *corev1.Pod {
+	podObj := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "nginx-deployment-7d475f5dd6-7x4xw",
 			Namespace: "default",
@@ -109,6 +118,8 @@ func createTestPodWithPVC() *corev1.Pod {
 			},
 		},
 	}
+	pod, _ := c.CoreV1().Pods(namespace).Create(context.Background(), podObj, metav1.CreateOptions{})
+	return pod
 }
 
 func createStatefulSetPod() *corev1.Pod {
@@ -126,8 +137,8 @@ func createStatefulSetPod() *corev1.Pod {
 	}
 }
 
-func createDaemonSetPod() *corev1.Pod {
-	return &corev1.Pod{
+func createDaemonSetPod(c kubernetes.Interface) *corev1.Pod {
+	podObj := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "nginx-daemonset-7d475f5dd6",
 			Namespace: "default",
@@ -139,6 +150,8 @@ func createDaemonSetPod() *corev1.Pod {
 			},
 		},
 	}
+	pod, _ := c.CoreV1().Pods(namespace).Create(context.Background(), podObj, metav1.CreateOptions{})
+	return pod
 }
 
 func TestGetPodOwnerKind(t *testing.T) {
@@ -147,9 +160,7 @@ func TestGetPodOwnerKind(t *testing.T) {
 		t.Error(err)
 	}
 
-	pod := createTestPodWithPVC()
-	_, err = c.ClientSet.CoreV1().Pods(namespace).Create(context.Background(), pod, metav1.CreateOptions{})
-	assert.NoError(t, err)
+	pod := createPodWithPVC(c.ClientSet)
 
 	// TODO: Add statefulset
 
