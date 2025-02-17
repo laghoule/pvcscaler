@@ -10,9 +10,9 @@ PVCScaler is a command-line tool for scaling pods with Persistent Volume Claims 
 
 ## Features
 
-- **Scale Up**: Scale up pods defined in the input state file.
-- **Scale Down**: Scale down pods with PVCs, in specified namespaces and storage class with optional output state file.
-- **Version Display**: Show the current version, git commit, and build date.
+- **Scale up**: Scale up pods defined in the input state file.
+- **Scale down**: Scale down pods with PVCs, in specified namespaces and storage class with optional output state file.
+- **Version display**: Show the current version, git commit, and build date.
 
 ## Prerequisites
 

@@ -35,8 +35,10 @@ func (c *Client) getPodOwnerName(ctx context.Context, namespace, podName string)
 				return "", err
 			}
 			return owner, nil
+		} else {
+			return oref.Name, nil
 		}
-		return oref.Name, nil
+
 	}
 
 	return "", nil

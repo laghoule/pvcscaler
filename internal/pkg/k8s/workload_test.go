@@ -187,10 +187,7 @@ func TestGetWorkloadOwnerKind(t *testing.T) {
 			c, err := NewTestClient()
 			assert.NoError(t, err)
 
-			pod := createStatefulSetPod()
-			_, err = c.ClientSet.CoreV1().Pods(namespace).Create(context.TODO(), pod, metav1.CreateOptions{})
-			assert.NoError(t, err)
-
+			pod := createStatefulSetPod(c.ClientSet)
 			actual, err := c.getWorkloadOwnerKind(context.TODO(), tt.workload.Namespace, pod.Name)
 			if tt.error {
 				assert.Error(t, err)

@@ -34,7 +34,6 @@ func createDeployment(c kubernetes.Interface) *appsv1.Deployment {
 	return dep
 }
 
-// FIXME: change name
 func createReplicaSet(c kubernetes.Interface) *appsv1.ReplicaSet {
 	rsObj := &appsv1.ReplicaSet{
 		ObjectMeta: metav1.ObjectMeta{
@@ -92,7 +91,6 @@ func createDaemonSet(c kubernetes.Interface) *appsv1.DaemonSet {
 	return ds
 }
 
-// FIXME: change name
 func createPodWithPVC(c kubernetes.Interface) *corev1.Pod {
 	podObj := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
@@ -122,8 +120,8 @@ func createPodWithPVC(c kubernetes.Interface) *corev1.Pod {
 	return pod
 }
 
-func createStatefulSetPod() *corev1.Pod {
-	return &corev1.Pod{
+func createStatefulSetPod(c kubernetes.Interface) *corev1.Pod {
+	podObj := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "nginx-statefulset-0",
 			Namespace: "default",
@@ -135,6 +133,8 @@ func createStatefulSetPod() *corev1.Pod {
 			},
 		},
 	}
+	pod, _ := c.CoreV1().Pods(namespace).Create(context.Background(), podObj, metav1.CreateOptions{})
+	return pod
 }
 
 func createDaemonSetPod(c kubernetes.Interface) *corev1.Pod {
@@ -160,11 +160,57 @@ func TestGetPodOwnerKind(t *testing.T) {
 		t.Error(err)
 	}
 
-	pod := createPodWithPVC(c.ClientSet)
+	emptyPodObj := &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "nginx-deployment-7d475f5dd6-7x4xx",
+			Namespace: "default",
+		},
+	}
 
-	// TODO: Add statefulset
-
-	kind, err := c.getPodOwnerKind(context.TODO(), pod.Namespace, pod.Name)
+	emptyPod, err := c.ClientSet.CoreV1().Pods(namespace).Create(context.Background(), emptyPodObj, metav1.CreateOptions{})
 	assert.NoError(t, err)
-	assert.Equal(t, "ReplicaSet", kind)
+
+	tests := []struct {
+		name     string
+		pod      *corev1.Pod
+		expected string
+		error    bool
+	}{
+		{
+			name:     "Deployment",
+			pod:      createPodWithPVC(c.ClientSet),
+			expected: "ReplicaSet",
+			error:    false,
+		},
+		{
+			name:     "Empty deployment",
+			pod:      &corev1.Pod{},
+			expected: "",
+			error:    true,
+		},
+		{
+			name:     "StatefulSet",
+			pod:      createStatefulSetPod(c.ClientSet),
+			expected: "StatefulSet",
+			error:    false,
+		},
+		{
+			name:     "No owner",
+			pod:      emptyPod,
+			expected: "",
+			error:    false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			actual, err := c.getPodOwnerKind(context.TODO(), tt.pod.Namespace, tt.pod.Name)
+			if tt.error {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expected, actual)
+			}
+		})
+	}
 }
