@@ -29,11 +29,43 @@ func createWorkloads() []k8s.Workload {
 }
 
 func TestReadFromFile(t *testing.T) {
+	tests := []struct {
+		name     string
+		filePath string
+		error    error
+	}{
+		{
+			name:     "read file",
+			filePath: "testdata/pvcscaler.json",
+			error:    nil,
+		},
+		{
+			name:     "read file error",
+			filePath: "notfound.json",
+			error:    fmt.Errorf("open notfound.json: no such file or directory"),
+		},
+		{
+			name:     "invalid json file",
+			filePath: "testdata/invalid.json",
+			error:    fmt.Errorf("invalid character 'i' looking for beginning of object key string"),
+		},
+	}
+
 	expected := createDataset()
-	dataset := dataset{}
-	err := dataset.ReadFromFile("testdata/pvcscaler.json")
-	assert.NoError(t, err)
-	assert.Equal(t, expected, dataset)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dataset := dataset{}
+			err := dataset.ReadFromFile(tt.filePath)
+			if tt.error != nil {
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), tt.error.Error())
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, expected, dataset)
+			}
+		})
+	}
 }
 
 func TestWriteToFile(t *testing.T) {
@@ -44,45 +76,44 @@ func TestWriteToFile(t *testing.T) {
 		dataset            dataset
 		expectedOutputFile string
 		actualOutputFile   string
-		error              error
+		error              bool
 	}{
 		{
 			name:               "empty element",
 			dataset:            dataset{},
 			expectedOutputFile: "testdata/empty.json",
 			actualOutputFile:   filepath.Join(tmpDir, "pvscaler.json"),
-			error:              nil,
+			error:              false,
 		},
 		{
 			name:               "one element",
 			dataset:            createDataset(),
 			expectedOutputFile: "testdata/pvcscaler.json",
 			actualOutputFile:   filepath.Join(tmpDir, "pvscaler.json"),
-			error:              nil,
+			error:              false,
 		},
 		{
 			name:               "write error",
 			dataset:            dataset{},
 			expectedOutputFile: "invalid.json",
 			actualOutputFile:   "/",
-			error:              fmt.Errorf("error writing to file: open /: is a directory"),
+			error:              true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.dataset.WriteToFile(tt.actualOutputFile)
-			assert.Equal(t, tt.error, err)
 
-			if tt.error != nil {
-				return
+			if tt.error {
+				assert.Error(t, err)
+			} else {
+				expected, err := os.ReadFile(tt.expectedOutputFile)
+				assert.NoError(t, err)
+
+				actual, err := os.ReadFile(tt.expectedOutputFile)
+				assert.NoError(t, err)
+				assert.Equal(t, string(expected), string(actual))
 			}
-
-			expected, err := os.ReadFile(tt.expectedOutputFile)
-			assert.NoError(t, err)
-
-			actual, err := os.ReadFile(tt.expectedOutputFile)
-			assert.NoError(t, err)
-			assert.Equal(t, string(expected), string(actual))
 		})
 	}
 }
