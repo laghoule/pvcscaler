@@ -18,10 +18,7 @@ func TestGetWorkloads(t *testing.T) {
 	createDeployment(c.ClientSet)
 	createReplicaSet(c.ClientSet)
 	createPodWithPVC(c.ClientSet)
-
-	pvc := createTestPVC("pvc-0c2e9fda-e8e6-11e8-8c05-000c29c3a172", namespace, "standard")
-	_, err = c.ClientSet.CoreV1().PersistentVolumeClaims(namespace).Create(context.TODO(), pvc, metav1.CreateOptions{})
-	assert.NoError(t, err)
+	createPVC(c.ClientSet, "pvc-0c2e9fda-e8e6-11e8-8c05-000c29c3a172", namespace, "standard")
 
 	wloads, err := c.GetWorkloads(context.TODO(), namespace, "standard")
 	assert.NoError(t, err)
