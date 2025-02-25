@@ -7,7 +7,28 @@ import (
 	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
+
+func createDeploymentWorkload(c kubernetes.Interface) *Workload {
+	createDeployment(c)
+	return &Workload{
+		Name:      "nginx-deployment",
+		Namespace: namespace,
+		Kind:      "Deployment",
+		Replicas:  1,
+	}
+}
+
+func createStatefulsetWorkload(c kubernetes.Interface) *Workload {
+	createStatefulSet(c)
+	return &Workload{
+		Name:      "nginx-statefulset",
+		Namespace: namespace,
+		Kind:      "StatefulSet",
+		Replicas:  1,
+	}
+}
 
 func TestGetWorkloads(t *testing.T) {
 	c, err := NewTestClient()
@@ -205,19 +226,55 @@ func TestGetWorkloadOwnerKind(t *testing.T) {
 	})
 }
 
-// func TestScale(t *testing.T) {
-// 	c, err := NewTestClient()
-// 	assert.NoError(t, err)
+func TestScale(t *testing.T) {
+	c, err := NewTestClient()
+	assert.NoError(t, err)
 
-// 	dep := createDeployment()
-// 	_, err = c.ClientSet.AppsV1().Deployments(namespace).Create(context.TODO(), dep, metav1.CreateOptions{})
-// 	assert.NoError(t, err)
+	tests := []struct {
+		name     string
+		workload *Workload
+		expected uint
+		error    bool
+	}{
+		{
+			name:     "deployment",
+			workload: createDeploymentWorkload(c.ClientSet),
+			expected: 0,
+			error:    false,
+		},
+		{
+			name:     "statefulset",
+			workload: createStatefulsetWorkload(c.ClientSet),
+			expected: 0,
+			error:    false,
+		},
+		{
+			name:     "workload error",
+			workload: &Workload{},
+			expected: 0,
+			error:    true,
+		},
+		{
+			name: "unsupported kind error",
+			workload: &Workload{
+				Name:      "nginx",
+				Namespace: namespace,
+				Kind:      "DaemonSet",
+				Replicas:  1,
+			},
+			expected: 0,
+			error:    true,
+		},
+	}
 
-// 	err = c.scale(context.TODO(), dep.Namespace, dep.Name, "Deployment", 2)
-// 	assert.NoError(t, err)
-
-// FIXME
-// _, err = c.ClientSet.AppsV1().Deployments(namespace).Get(context.TODO(), dep.Name, metav1.GetOptions{})
-// assert.NoError(t, err)
-// assert.Equal(t, int32(2), *dep.Spec.Replicas)
-//}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.workload.scale(context.TODO(), c, namespace, tt.workload.Name, tt.workload.Kind, 0)
+			if tt.error {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
