@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"os/signal"
-	"syscall"
 
 	"laghoule/pvcscaler/internal/pkg/pvcscaler"
 
@@ -35,18 +33,10 @@ func init() {
 }
 
 func down() {
-	// TODO: cancel is duplicated
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx, cancelFunc := context.WithCancel(context.Background())
+	defer cancelFunc()
 
-	signalChan := make(chan os.Signal, 1)
-	signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM)
-
-	go func() {
-		<-signalChan
-		fmt.Println("\nReceived interrupt, cancelling...")
-		cancel()
-	}()
+	processSignal(cancelFunc)
 
 	if !validNamespaces(namespaces) {
 		fmt.Printf("error: invalid namespace, cannot mix `all` with other namespace\n")

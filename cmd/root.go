@@ -1,6 +1,11 @@
 package cmd
 
 import (
+	"context"
+	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
 	"path/filepath"
 	"time"
 
@@ -38,4 +43,15 @@ func init() {
 
 	rootCmd.PersistentFlags().StringP("kubeconfig", "k", kubeconfig, "path to kubeconfig")
 	rootCmd.PersistentFlags().BoolVarP(&dryRun, "dry-run", "d", false, "dry run mode")
+}
+
+func processSignal(cancelFunc context.CancelFunc) {
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM)
+
+	go func() {
+		<-signalChan
+		fmt.Println("\nReceived interrupt, cancelling...")
+		cancelFunc()
+	}()
 }
