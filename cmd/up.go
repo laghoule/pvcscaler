@@ -3,7 +3,6 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"os"
 
 	"laghoule/pvcscaler/internal/pkg/pvcscaler"
 
@@ -35,16 +34,10 @@ func up() {
 	processSignal(cancelFunc)
 
 	pvcscaler, err := pvcscaler.New(kubeconfig, namespaces, storageClass, dryRun)
-	if err != nil {
-		fmt.Printf("error: %v\n", err)
-		os.Exit(1)
-	}
+	exitOnError(err)
 
 	fmt.Println(inputFile)
 
 	err = pvcscaler.Up(ctx, inputFile)
-	if err != nil {
-		fmt.Printf("error: %v\n", err)
-		os.Exit(1)
-	}
+	exitOnError(err)
 }
