@@ -226,6 +226,64 @@ func TestGetWorkloadOwnerKind(t *testing.T) {
 	})
 }
 
+func TestScaleDown(t *testing.T) {
+	c, err := NewTestClient()
+	assert.NoError(t, err)
+
+	tests := []struct {
+		name     string
+		workload *Workload
+		expected int32
+	}{
+		{
+			name:     "deployment",
+			workload: createDeploymentWorkload(c.ClientSet),
+			expected: 0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.workload.ScaleDown(context.TODO(), c, namespace, tt.workload.Name, tt.workload.Kind)
+			assert.NoError(t, err)
+
+			actual, err := c.ClientSet.AppsV1().Deployments(namespace).GetScale(context.TODO(), tt.workload.Name, metav1.GetOptions{})
+			assert.NoError(t, err)
+			assert.Equal(t, tt.expected, actual.Spec.Replicas)
+
+		})
+	}
+}
+
+func TestScaleUp(t *testing.T) {
+	c, err := NewTestClient()
+	assert.NoError(t, err)
+
+	tests := []struct {
+		name     string
+		workload *Workload
+		expected int32
+	}{
+		{
+			name:     "deployment",
+			workload: createDeploymentWorkload(c.ClientSet),
+			expected: 2,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.workload.ScaleUp(context.TODO(), c, namespace, tt.workload.Name, tt.workload.Kind, tt.expected)
+			assert.NoError(t, err)
+
+			actual, err := c.ClientSet.AppsV1().Deployments(namespace).GetScale(context.TODO(), tt.workload.Name, metav1.GetOptions{})
+			assert.NoError(t, err)
+			assert.Equal(t, tt.expected, actual.Spec.Replicas)
+
+		})
+	}
+}
+
 func TestScale(t *testing.T) {
 	c, err := NewTestClient()
 	assert.NoError(t, err)

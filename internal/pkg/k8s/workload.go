@@ -94,7 +94,7 @@ func (c *Client) getReplicaSetOwner(ctx context.Context, namespace, rsName strin
 		return "", fmt.Errorf("failed to get replica set %q: %v", rsName, err)
 	}
 
-	for _, owner := range rs.OwnerReferences {
+	for _, owner := range rs.GetOwnerReferences() {
 		return owner.Name, nil
 	}
 

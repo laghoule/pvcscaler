@@ -15,7 +15,7 @@ func (c *Client) getPodOwnerKind(ctx context.Context, namespace, podName string)
 		return "", fmt.Errorf("failed to get pod %q: %v", podName, err)
 	}
 
-	for _, owner := range pod.OwnerReferences {
+	for _, owner := range pod.GetOwnerReferences() {
 		return owner.Kind, nil
 	}
 
