@@ -16,7 +16,7 @@ type Workload struct {
 	Kind      string `json:"kind"`
 	Name      string `json:"name"`
 	Namespace string `json:"namespace"`
-	Replicas  uint   `json:"replicas"`
+	Replicas  int32  `json:"replicas"`
 }
 
 func (c *Client) GetDeploymentWorkloads(ctx context.Context, namespace, storageClass string) ([]Workload, error) {

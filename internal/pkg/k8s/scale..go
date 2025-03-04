@@ -10,7 +10,7 @@ import (
 
 // FIXME: uint isnt a good idea, use what k8s use
 
-func (c *Client) getReplicas(ctx context.Context, namespace, name string, kind string) (uint, error) {
+func (c *Client) getReplicas(ctx context.Context, namespace, name string, kind string) (int32, error) {
 	var replicas *int32
 
 	switch kind {
@@ -32,7 +32,7 @@ func (c *Client) getReplicas(ctx context.Context, namespace, name string, kind s
 		return 0, fmt.Errorf("failed to get replicas for %s, unsupported kind: %q", name, kind)
 	}
 
-	return uint(*replicas), nil
+	return *replicas, nil
 }
 
 func (w *Workload) ScaleDown(ctx context.Context, k8sClient *Client, namespace, name, kind string) error {
