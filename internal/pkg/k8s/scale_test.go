@@ -13,7 +13,7 @@ func TestGetReplicas(t *testing.T) {
 	type test[T any] struct {
 		name     string
 		workload T
-		expected uint
+		expected int32
 		error    bool
 	}
 
