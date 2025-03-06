@@ -8,8 +8,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// FIXME: uint isnt a good idea, use what k8s use
-
 func (c *Client) getReplicas(ctx context.Context, namespace, name string, kind string) (int32, error) {
 	var replicas *int32
 

@@ -22,12 +22,37 @@ func NewTestClient() (*Client, error) {
 	}, nil
 }
 
-// FIXME: not working in github actions
-// func TestNewClient(t *testing.T) {
-// 	client, err := New("", false)
-// 	assert.NoError(t, err)
-// 	assert.NotNil(t, client)
-// }
+func TestNewClient(t *testing.T) {
+	tests := []struct {
+		name    string
+		kubeconfig string
+		error bool
+	}{
+		{
+			name: "not found kubeconfig",
+			kubeconfig: "kubeconfig",
+			error: true,
+		},
+		{
+			name: "default kubeconfig",
+			kubeconfig: "testdata/kubeconfig.yaml",
+			error: false,
+		},
+	
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			client, err := New(tt.kubeconfig, false)
+			if tt.error {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, client)
+			}
+		})
+	}
+}
 
 func createTestNamespace() *corev1.Namespace {
 	return &corev1.Namespace{
