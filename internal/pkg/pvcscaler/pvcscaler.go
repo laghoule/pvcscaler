@@ -31,11 +31,11 @@ func New(kubeconfig string, namespaces []string, storageClass string, dryRun boo
 	}, nil
 }
 
-func (p *PVCscaler) getWorkloads(ctx context.Context, k8sClient *k8s.Client, namespaces []string, storageClass string) error {
+func (p *PVCscaler) getWorkloads(ctx context.Context, namespaces []string, storageClass string) error {
 	var err error
 
 	if len(namespaces) == 1 && namespaces[0] == "all" {
-		namespaces, err = k8sClient.GetAllNamespaces(ctx)
+		namespaces, err = p.k8sClient.GetAllNamespaces(ctx)
 		if err != nil {
 			return err
 		}
@@ -52,7 +52,7 @@ func (p *PVCscaler) getWorkloads(ctx context.Context, k8sClient *k8s.Client, nam
 			case <-ctx.Done():
 				return
 			default:
-				workloads, err := k8sClient.GetWorkloads(ctx, ns, storageClass)
+				workloads, err := p.k8sClient.GetWorkloads(ctx, ns, storageClass)
 				if err != nil {
 					errChan <- err
 					return
@@ -73,7 +73,7 @@ func (p *PVCscaler) getWorkloads(ctx context.Context, k8sClient *k8s.Client, nam
 }
 
 func (p *PVCscaler) Down(ctx context.Context, outputFile string) error {
-	err := p.getWorkloads(ctx, p.k8sClient, p.namespaces, p.storageClass)
+	err := p.getWorkloads(ctx, p.namespaces, p.storageClass)
 	if err != nil {
 		return err
 	}
