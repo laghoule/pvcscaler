@@ -37,8 +37,6 @@ func TestGetWorkloads(t *testing.T) {
 	}
 
 	createDeployment(c.ClientSet)
-	createReplicaSet(c.ClientSet)
-	createPodWithPVC(c.ClientSet)
 	createPVC(c.ClientSet, "nginx-pvc", namespace, "standard")
 
 	wloads, err := c.GetWorkloads(context.TODO(), namespace, "standard")
