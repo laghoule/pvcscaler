@@ -37,7 +37,7 @@ func (p *PVCscaler) getWorkloads(ctx context.Context, k8sClient *k8s.Client, nam
 	if len(namespaces) == 1 && namespaces[0] == "all" {
 		namespaces, err = k8sClient.GetAllNamespaces(ctx)
 		if err != nil {
-			panic(err)
+			return err
 		}
 	}
 
