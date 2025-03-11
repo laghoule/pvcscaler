@@ -16,6 +16,7 @@ const (
 	namespace = "default"
 )
 
+// TODO: change name to NewFakeClient
 func NewTestClient() (*Client, error) {
 	return &Client{
 		ClientSet: fake.NewSimpleClientset(),
