@@ -16,10 +16,10 @@ const (
 	namespace = "default"
 )
 
-// TODO: change name to NewFakeClient
-func NewTestClient() (*Client, error) {
+func NewFakeClient(t *testing.T) (*Client, error) {
 	return &Client{
 		ClientSet: fake.NewSimpleClientset(),
+		Context: t.Context(),
 	}, nil
 }
 
@@ -44,7 +44,7 @@ func TestNewClient(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			client, err := New(tt.kubeconfig, false)
+			client, err := New(t.Context(), tt.kubeconfig, false)
 			if tt.error {
 				assert.Error(t, err)
 			} else {
@@ -61,12 +61,12 @@ func createNamespace(c kubernetes.Interface) *corev1.Namespace  {
 			Name: "default",
 		},
 	}
-	ns, _ := c.CoreV1().Namespaces().Create(context.Background(), nsObj, metav1.CreateOptions{})
+	ns, _ := c.CoreV1().Namespaces().Create(context.TODO(), nsObj, metav1.CreateOptions{})
 	return ns
 }
 
 func TestGetAllNamespaces(t *testing.T) {
-	c, err := NewTestClient()
+	c, err := NewFakeClient(t)
 	assert.NoError(t, err)
 
 	createNamespace(c.ClientSet)
@@ -89,7 +89,7 @@ func TestGetAllNamespaces(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			actual, err := c.GetAllNamespaces(context.TODO())
+			actual, err := c.GetAllNamespaces()
 			if tt.error {
 				assert.Error(t, err)
 			} else {
@@ -98,7 +98,7 @@ func TestGetAllNamespaces(t *testing.T) {
 		})
 	}
 
-	namespaces, err := c.GetAllNamespaces(context.TODO())
+	namespaces, err := c.GetAllNamespaces()
 	assert.NoError(t, err)
 	assert.NotNil(t, namespaces)
 	assert.Equal(t, "default", namespaces[0])
@@ -164,28 +164,8 @@ func createDeployment(c kubernetes.Interface) *appsv1.Deployment {
 			Replicas: int32PTR(1),
 		},
 	}
-	dep, _ := c.AppsV1().Deployments(namespace).Create(context.Background(), depObj, metav1.CreateOptions{})
+	dep, _ := c.AppsV1().Deployments(namespace).Create(context.TODO(), depObj, metav1.CreateOptions{})
 	return dep
-}
-
-func createReplicaSet(c kubernetes.Interface) *appsv1.ReplicaSet {
-	rsObj := &appsv1.ReplicaSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "nginx-deployment-7d475f5dd6",
-			Namespace: namespace,
-			OwnerReferences: []metav1.OwnerReference{
-				{
-					Kind: "Deployment",
-					Name: "nginx-deployment",
-				},
-			},
-		},
-		Spec: appsv1.ReplicaSetSpec{
-			Replicas: int32PTR(1),
-		},
-	}
-	rs, _ := c.AppsV1().ReplicaSets(namespace).Create(context.Background(), rsObj, metav1.CreateOptions{})
-	return rs
 }
 
 func createStatefulSet(c kubernetes.Interface) *appsv1.StatefulSet {
@@ -210,7 +190,7 @@ func createStatefulSet(c kubernetes.Interface) *appsv1.StatefulSet {
 			},
 		},
 	}
-	sts, _ := c.AppsV1().StatefulSets(namespace).Create(context.Background(), stsObj, metav1.CreateOptions{})
+	sts, _ := c.AppsV1().StatefulSets(namespace).Create(context.TODO(), stsObj, metav1.CreateOptions{})
 	return sts
 }
 
@@ -233,69 +213,6 @@ func createDaemonSet(c kubernetes.Interface) *appsv1.DaemonSet {
 			},
 		},
 	}
-	ds, _ := c.AppsV1().DaemonSets(namespace).Create(context.Background(), dsObj, metav1.CreateOptions{})
+	ds, _ := c.AppsV1().DaemonSets(namespace).Create(context.TODO(), dsObj, metav1.CreateOptions{})
 	return ds
-}
-
-func createPodWithPVC(c kubernetes.Interface) *corev1.Pod {
-	podObj := &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "nginx-deployment-7d475f5dd6-7x4xw",
-			Namespace: "default",
-			OwnerReferences: []metav1.OwnerReference{
-				{
-					Kind: "ReplicaSet",
-					Name: "nginx-deployment-7d475f5dd6",
-				},
-			},
-		},
-		Spec: corev1.PodSpec{
-			Volumes: []corev1.Volume{
-				{
-					Name: "pvc-0c2e9fda-e8e6-11e8-8c05-000c29c3a172",
-					VolumeSource: corev1.VolumeSource{
-						PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-							ClaimName: "pvc-0c2e9fda-e8e6-11e8-8c05-000c29c3a172",
-						},
-					},
-				},
-			},
-		},
-	}
-	pod, _ := c.CoreV1().Pods(namespace).Create(context.Background(), podObj, metav1.CreateOptions{})
-	return pod
-}
-
-func createStatefulSetPod(c kubernetes.Interface) *corev1.Pod {
-	podObj := &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "nginx-statefulset-0",
-			Namespace: "default",
-			OwnerReferences: []metav1.OwnerReference{
-				{
-					Kind: "StatefulSet",
-					Name: "nginx-statefulset",
-				},
-			},
-		},
-	}
-	pod, _ := c.CoreV1().Pods(namespace).Create(context.Background(), podObj, metav1.CreateOptions{})
-	return pod
-}
-
-func createDaemonSetPod(c kubernetes.Interface) *corev1.Pod {
-	podObj := &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "nginx-daemonset-7d475f5dd6",
-			Namespace: "default",
-			OwnerReferences: []metav1.OwnerReference{
-				{
-					Kind: "DaemonSet",
-					Name: "nginx-daemonset",
-				},
-			},
-		},
-	}
-	pod, _ := c.CoreV1().Pods(namespace).Create(context.Background(), podObj, metav1.CreateOptions{})
-	return pod
 }

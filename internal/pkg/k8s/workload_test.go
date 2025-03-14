@@ -1,7 +1,6 @@
 package k8s
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -31,7 +30,7 @@ func createStatefulsetWorkload(c kubernetes.Interface) *Workload {
 }
 
 func TestGetWorkloads(t *testing.T) {
-	c, err := NewTestClient()
+	c, err := NewFakeClient(t)
 	if err != nil {
 		t.Error(err)
 	}
@@ -39,7 +38,7 @@ func TestGetWorkloads(t *testing.T) {
 	createDeployment(c.ClientSet)
 	createPVC(c.ClientSet, "nginx-pvc", namespace, "standard")
 
-	wloads, err := c.GetWorkloads(context.TODO(), namespace, "standard")
+	wloads, err := c.GetWorkloads(t.Context(), namespace, "standard")
 	assert.NoError(t, err)
 
 	assert.Equal(t, 1, len(wloads))
@@ -48,7 +47,7 @@ func TestGetWorkloads(t *testing.T) {
 }
 
 func TestGetDeploymentWorkloads(t *testing.T) {
-	c, err := NewTestClient()
+	c, err := NewFakeClient(t)
 	if err != nil {
 		t.Error(err)
 	}
@@ -97,7 +96,7 @@ func TestGetDeploymentWorkloads(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			actual, err := c.GetDeploymentWorkloads(context.TODO(), tt.dep.Namespace, tt.storageClass)
+			actual, err := c.GetDeploymentWorkloads(t.Context(), tt.dep.Namespace, tt.storageClass)
 			if tt.error {
 				assert.Error(t, err)
 			} else {
@@ -108,7 +107,7 @@ func TestGetDeploymentWorkloads(t *testing.T) {
 }
 
 func TestGetStatefulSetWorkloads(t *testing.T) {
-	c, err := NewTestClient()
+	c, err := NewFakeClient(t)
 	if err != nil {
 		t.Error(err)
 	}
@@ -116,7 +115,7 @@ func TestGetStatefulSetWorkloads(t *testing.T) {
 	createStatefulSet(c.ClientSet)
 	createPVC(c.ClientSet, "nginx-pvc", namespace, "standard")
 
-	wloads, err := c.GetStatefulSetWorkloads(context.TODO(), namespace, "standard")
+	wloads, err := c.GetStatefulSetWorkloads(t.Context(), namespace, "standard")
 	assert.NoError(t, err)
 
 	assert.Equal(t, 1, len(wloads))

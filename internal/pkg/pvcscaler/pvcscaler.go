@@ -18,7 +18,7 @@ type PVCscaler struct {
 }
 
 func New(kubeconfig string, namespaces []string, storageClass string, dryRun bool) (*PVCscaler, error) {
-	k8sClient, err := k8s.New(kubeconfig, dryRun)
+	k8sClient, err := k8s.New(context.TODO(), kubeconfig, dryRun)
 	if err != nil {
 		return nil, err
 	}
@@ -35,7 +35,7 @@ func (p *PVCscaler) getWorkloads(ctx context.Context, namespaces []string, stora
 	var err error
 
 	if len(namespaces) == 1 && namespaces[0] == "all" {
-		namespaces, err = p.k8sClient.GetAllNamespaces(ctx)
+		namespaces, err = p.k8sClient.GetAllNamespaces()
 		if err != nil {
 			return err
 		}
@@ -82,7 +82,7 @@ func (p *PVCscaler) Down(ctx context.Context, outputFile string) error {
 
 	for _, workload := range p.workloads {
 		fmt.Printf(" ✴️ %s %s/%s\n", workload.Kind, workload.Namespace, workload.Name)
-		err := workload.ScaleDown(ctx, p.k8sClient, workload.Namespace, workload.Name, workload.Kind)
+		err := workload.ScaleDown(p.k8sClient, workload.Namespace, workload.Name, workload.Kind)
 		if err != nil {
 			return err
 		}
@@ -113,7 +113,7 @@ func (p *PVCscaler) Up(ctx context.Context, outputFile string) error {
 	workloads := dataset.toWorkloads()
 	for _, workload := range workloads {
 		fmt.Printf(" ✴️ %s %s/%s\n", workload.Kind, workload.Namespace, workload.Name)
-		err := workload.ScaleUp(ctx, p.k8sClient, workload.Namespace, workload.Name, workload.Kind, int32(workload.Replicas))
+		err := workload.ScaleUp(p.k8sClient, workload.Namespace, workload.Name, workload.Kind, int32(workload.Replicas))
 		if err != nil {
 			return err
 		}

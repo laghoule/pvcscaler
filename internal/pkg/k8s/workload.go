@@ -36,7 +36,7 @@ func (c *Client) GetDeploymentWorkloads(ctx context.Context, namespace, storageC
 				continue
 			}
 
-			pvcMatchSC, err := c.isStorageClassMatched(ctx, vol.PersistentVolumeClaim.ClaimName, namespace, storageClass)
+			pvcMatchSC, err := c.isStorageClassMatched(vol.PersistentVolumeClaim.ClaimName, namespace, storageClass)
 			if err != nil {
 				return nil, err
 			}
@@ -45,7 +45,7 @@ func (c *Client) GetDeploymentWorkloads(ctx context.Context, namespace, storageC
 				continue
 			}
 
-			replicas, err := c.getReplicas(ctx, namespace, dep.Name, deploymentKind)
+			replicas, err := c.getReplicas(namespace, dep.Name, deploymentKind)
 			if err != nil {
 				return nil, err
 			}
@@ -84,7 +84,7 @@ func (c *Client) GetStatefulSetWorkloads(ctx context.Context, namespace, storage
 				continue
 			}
 
-			replicas, err := c.getReplicas(ctx, namespace, sts.Name, statefulSetKind)
+			replicas, err := c.getReplicas(namespace, sts.Name, statefulSetKind)
 			if err != nil {
 				return nil, err
 			}

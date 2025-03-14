@@ -1,7 +1,6 @@
 package k8s
 
 import (
-	"context"
 	"testing"
 
 	assert "github.com/stretchr/testify/assert"
@@ -17,7 +16,7 @@ func TestGetReplicas(t *testing.T) {
 		error    bool
 	}
 
-	c, err := NewTestClient()
+	c, err := NewFakeClient(t)
 	assert.NoError(t, err)
 
 	testsDep := []test[*appsv1.Deployment]{
@@ -59,13 +58,13 @@ func TestGetReplicas(t *testing.T) {
 
 	for _, tt := range testsDep {
 		t.Run(tt.name, func(t *testing.T) {
-			c, err := NewTestClient()
+			c, err := NewFakeClient(t)
 			assert.NoError(t, err)
 
-			_, err = c.ClientSet.AppsV1().Deployments(namespace).Create(context.TODO(), tt.workload, metav1.CreateOptions{})
+			_, err = c.ClientSet.AppsV1().Deployments(namespace).Create(t.Context(), tt.workload, metav1.CreateOptions{})
 			assert.NoError(t, err)
 
-			actual, err := c.getReplicas(context.TODO(), tt.workload.Namespace, tt.workload.Name, "Deployment")
+			actual, err := c.getReplicas(tt.workload.Namespace, tt.workload.Name, "Deployment")
 			if tt.error {
 				assert.Error(t, err)
 			} else {
@@ -77,7 +76,7 @@ func TestGetReplicas(t *testing.T) {
 
 	for _, tt := range testsSts {
 		t.Run(tt.name, func(t *testing.T) {
-			actual, err := c.getReplicas(context.TODO(), tt.workload.Namespace, tt.workload.Name, "StatefulSet")
+			actual, err := c.getReplicas(tt.workload.Namespace, tt.workload.Name, "StatefulSet")
 			if tt.error {
 				assert.Error(t, err)
 			} else {
@@ -88,16 +87,16 @@ func TestGetReplicas(t *testing.T) {
 	}
 
 	t.Run(testUnsupportedKind.name, func(t *testing.T) {
-		c, err := NewTestClient()
+		c, err := NewFakeClient(t)
 		assert.NoError(t, err)
 
-		_, err = c.getReplicas(context.TODO(), testUnsupportedKind.workload.Namespace, testUnsupportedKind.workload.Name, "DaemonSet")
+		_, err = c.getReplicas(testUnsupportedKind.workload.Namespace, testUnsupportedKind.workload.Name, "DaemonSet")
 		assert.Error(t, err)
 	})
 }
 
 func TestScaleDown(t *testing.T) {
-	c, err := NewTestClient()
+	c, err := NewFakeClient(t)
 	assert.NoError(t, err)
 
 	tests := []struct {
@@ -114,10 +113,10 @@ func TestScaleDown(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := tt.workload.ScaleDown(context.TODO(), c, namespace, tt.workload.Name, tt.workload.Kind)
+			err := tt.workload.ScaleDown(c, namespace, tt.workload.Name, tt.workload.Kind)
 			assert.NoError(t, err)
 
-			actual, err := c.ClientSet.AppsV1().Deployments(namespace).GetScale(context.TODO(), tt.workload.Name, metav1.GetOptions{})
+			actual, err := c.ClientSet.AppsV1().Deployments(namespace).GetScale(t.Context(), tt.workload.Name, metav1.GetOptions{})
 			assert.NoError(t, err)
 			assert.Equal(t, tt.expected, actual.Spec.Replicas)
 
@@ -126,7 +125,7 @@ func TestScaleDown(t *testing.T) {
 }
 
 func TestScaleUp(t *testing.T) {
-	c, err := NewTestClient()
+	c, err := NewFakeClient(t)
 	assert.NoError(t, err)
 
 	tests := []struct {
@@ -143,19 +142,18 @@ func TestScaleUp(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := tt.workload.ScaleUp(context.TODO(), c, namespace, tt.workload.Name, tt.workload.Kind, tt.expected)
+			err := tt.workload.ScaleUp(c, namespace, tt.workload.Name, tt.workload.Kind, tt.expected)
 			assert.NoError(t, err)
 
-			actual, err := c.ClientSet.AppsV1().Deployments(namespace).GetScale(context.TODO(), tt.workload.Name, metav1.GetOptions{})
+			actual, err := c.ClientSet.AppsV1().Deployments(namespace).GetScale(t.Context(), tt.workload.Name, metav1.GetOptions{})
 			assert.NoError(t, err)
 			assert.Equal(t, tt.expected, actual.Spec.Replicas)
-
 		})
 	}
 }
 
 func TestScale(t *testing.T) {
-	c, err := NewTestClient()
+	c, err := NewFakeClient(t)
 	assert.NoError(t, err)
 
 	tests := []struct {
@@ -197,7 +195,7 @@ func TestScale(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := tt.workload.scale(context.TODO(), c, namespace, tt.workload.Name, tt.workload.Kind, 0)
+			err := tt.workload.scale(c, namespace, tt.workload.Name, tt.workload.Kind, 0)
 			if tt.error {
 				assert.Error(t, err)
 			} else {

@@ -20,12 +20,12 @@ func createPVC(c kubernetes.Interface, name, namespace, storageClass string) *co
 			StorageClassName: &storageClass,
 		},
 	}
-	pvc, _ := c.CoreV1().PersistentVolumeClaims(namespace).Create(context.Background(), pvcObj, metav1.CreateOptions{})
+	pvc, _ := c.CoreV1().PersistentVolumeClaims(namespace).Create(context.TODO(), pvcObj, metav1.CreateOptions{})
 	return pvc
 }
 
 func TestIsStorageClassMatched(t *testing.T) {
-	c, err := NewTestClient()
+	c, err := NewFakeClient(t)
 	assert.NoError(t, err)
 
 	createPVC(c.ClientSet, "test-pvc", "default", "standard")
@@ -66,7 +66,7 @@ func TestIsStorageClassMatched(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			actual, err := c.isStorageClassMatched(context.TODO(), tt.pvcName, tt.namespace, tt.storageClass)
+			actual, err := c.isStorageClassMatched(tt.pvcName, tt.namespace, tt.storageClass)
 			if tt.error {
 				assert.Error(t, err)
 				return

@@ -10,10 +10,11 @@ import (
 
 type Client struct {
 	ClientSet kubernetes.Interface
+	Context   context.Context
 	DryRun    bool
 }
 
-func New(kubeconfig string, dryRun bool) (*Client, error) {
+func New(ctx context.Context, kubeconfig string, dryRun bool) (*Client, error) {
 	if kubeconfig == "" {
 		kubeconfig = clientcmd.RecommendedHomeFile
 	}
@@ -35,12 +36,13 @@ func New(kubeconfig string, dryRun bool) (*Client, error) {
 
 	return &Client{
 		ClientSet: clientset,
+		Context:   ctx,
 		DryRun:    dryRun,
 	}, nil
 }
 
-func (c *Client) GetAllNamespaces(ctx context.Context) ([]string, error) {
-	namespaces, err := c.ClientSet.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
+func (c *Client) GetAllNamespaces() ([]string, error) {
+	namespaces, err := c.ClientSet.CoreV1().Namespaces().List(c.Context, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
