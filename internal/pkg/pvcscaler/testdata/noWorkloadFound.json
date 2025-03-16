@@ -1,0 +1,8 @@
+[
+  {
+    "kind": "Deployment",
+    "name": "notfound",
+    "namespace": "notfound",
+    "replicas": 1
+  }
+]

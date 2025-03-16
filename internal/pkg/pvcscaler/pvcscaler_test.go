@@ -250,3 +250,53 @@ func TestDown(t *testing.T) {
 		})
 	}
 }
+
+func TestUp(t *testing.T) {
+	type k8sResource[T any] struct {
+		resource T
+	}
+
+	fakeClient := NewFakeClient()
+	createNamespace(fakeClient)
+
+	tests := []struct {
+		name      string
+		inputFile string
+		resource  k8sResource[any]
+		error     bool
+	}{
+		{
+			name:      "Up deployment",
+			inputFile: "testdata/pvcscaler.json",
+			resource:  k8sResource[any]{resource: createDeployment(fakeClient)},
+			error:     false,
+		},
+		{
+			name:      "No deployment found",
+			inputFile: "testdata/noWorkloadFoundjson",
+			resource:  k8sResource[any]{resource: nil},
+			error:     true,
+		},
+		{
+			name:      "No input file found",
+			inputFile: "testdata/notfound.json",
+			error:     true,
+		},
+	}
+
+	for _, tt := range tests {
+		pvcscaler := &PVCscaler{
+			k8sClient: &k8s.Client{ClientSet: fakeClient},
+		}
+
+		t.Run(tt.name, func(t *testing.T) {
+			err := pvcscaler.Up(t.Context(), tt.inputFile)
+
+			if tt.error {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
