@@ -36,7 +36,7 @@ jobs:
           github_token: ${{ secrets.PVCSCALER_TOKEN }}
           goos: ${{ matrix.goos }}
           goarch: ${{ matrix.goarch }}
-          goversion: "1.24.0"
+          goversion: "1.24.1"
           pre_command: export CGO_ENABLED=0
           build_flags: -v
           ldflags: -X 'cmd.version=${{env.VERSION}}' -X 'cmd.gitCommit=${{ github.sha }}' -X 'cmd.buildDate=${{ env.DATE }}'
