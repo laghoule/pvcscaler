@@ -36,7 +36,7 @@ func TestReadFromFile(t *testing.T) {
 	}{
 		{
 			name:     "read file",
-			filePath: "testdata/pvcscaler.json",
+			filePath: "testdata/dataset.json",
 			error:    nil,
 		},
 		{
@@ -88,7 +88,7 @@ func TestWriteToFile(t *testing.T) {
 		{
 			name:               "one element",
 			dataset:            createDataset(),
-			expectedOutputFile: "testdata/pvcscaler.json",
+			expectedOutputFile: "testdata/dataset.json",
 			actualOutputFile:   filepath.Join(tmpDir, "pvscaler.json"),
 			error:              false,
 		},

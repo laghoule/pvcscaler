@@ -1,8 +1,8 @@
-[
-  {
-    "kind": "Deployment",
-    "name": "prometheus-grafana",
-    "namespace": "monitoring",
-    "replicas": 1
-  }
-]
+	[
+		{
+			"kind": "Deployment",
+			"name": "nginx-deployment",
+			"namespace": "default",
+			"replicas": 1
+		}
+	]

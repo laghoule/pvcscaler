@@ -2,6 +2,8 @@ package pvcscaler
 
 import (
 	"context"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"laghoule/pvcscaler/internal/pkg/k8s"
@@ -24,7 +26,7 @@ func NewFakeClient() kubernetes.Interface {
 	return fake.NewSimpleClientset()
 }
 
-func createNamespace(c kubernetes.Interface) *corev1.Namespace  {
+func createNamespace(c kubernetes.Interface) *corev1.Namespace {
 	nsObj := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "default",
@@ -188,6 +190,62 @@ func TestGetWorkloads(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 				assert.Len(t, pvcscaler.workloads, 2)
+			}
+		})
+	}
+}
+
+func TestDown(t *testing.T) {
+	type k8sResource[T any] struct {
+		resource T
+	}
+
+	fakeClient := NewFakeClient()
+	createNamespace(fakeClient)
+	createPVC(fakeClient, "nginx-pvc", namespace, "standard")
+	createDeployment(fakeClient)
+
+	tmpDir := t.TempDir()
+
+	tests := []struct {
+		name               string
+		resource           k8sResource[any]
+		namespace          []string
+		storageClass       string
+		expectedOutputFile string
+		actualOutputFile   string
+		error              bool
+	}{
+		{
+			name:               "Down deployment for all namespaces",
+			resource:           k8sResource[any]{resource: createDeployment(fakeClient)},
+			namespace:          []string{"all"},
+			storageClass:       "standard",
+			expectedOutputFile: "testdata/pvcscaler.json",
+			actualOutputFile:   filepath.Join(tmpDir, "pvscaler.json"),
+			error:              false,
+		},
+	}
+
+	for _, tt := range tests {
+		pvcscaler := &PVCscaler{
+			k8sClient:    &k8s.Client{ClientSet: fakeClient},
+			namespaces:   tt.namespace,
+			storageClass: tt.storageClass,
+		}
+
+		t.Run(tt.name, func(t *testing.T) {
+			err := pvcscaler.Down(t.Context(), tt.actualOutputFile)
+
+			if tt.error {
+				assert.Error(t, err)
+			} else {
+				expected, err := os.ReadFile(tt.expectedOutputFile)
+				assert.NoError(t, err)
+
+				actual, err := os.ReadFile(tt.actualOutputFile)
+				assert.NoError(t, err)
+				assert.JSONEq(t, string(expected), string(actual))
 			}
 		})
 	}
