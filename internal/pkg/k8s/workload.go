@@ -1,7 +1,6 @@
 package k8s
 
 import (
-	"context"
 	"fmt"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -19,8 +18,8 @@ type Workload struct {
 	Replicas  int32  `json:"replicas"`
 }
 
-func (c *Client) GetDeploymentWorkloads(ctx context.Context, namespace, storageClass string) ([]Workload, error) {
-	dep, err := c.ClientSet.AppsV1().Deployments(namespace).List(ctx, metav1.ListOptions{})
+func (c *Client) GetDeploymentWorkloads(namespace, storageClass string) ([]Workload, error) {
+	dep, err := c.ClientSet.AppsV1().Deployments(namespace).List(c.Context, metav1.ListOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to list deployments: %v", err)
 	}
@@ -62,8 +61,8 @@ func (c *Client) GetDeploymentWorkloads(ctx context.Context, namespace, storageC
 	return workloads, nil
 }
 
-func (c *Client) GetStatefulSetWorkloads(ctx context.Context, namespace, storageClass string) ([]Workload, error) {
-	sts, err := c.ClientSet.AppsV1().StatefulSets(namespace).List(ctx, metav1.ListOptions{})
+func (c *Client) GetStatefulSetWorkloads(namespace, storageClass string) ([]Workload, error) {
+	sts, err := c.ClientSet.AppsV1().StatefulSets(namespace).List(c.Context, metav1.ListOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to list statefulset: %v", err)
 	}
@@ -101,17 +100,17 @@ func (c *Client) GetStatefulSetWorkloads(ctx context.Context, namespace, storage
 	return workloads, nil
 }
 
-func (c *Client) GetWorkloads(ctx context.Context, namespace, storageClass string) ([]Workload, error) {
+func (c *Client) GetWorkloads(namespace, storageClass string) ([]Workload, error) {
 	workloads := []Workload{}
 
-	depWorkloads, err := c.GetDeploymentWorkloads(ctx, namespace, storageClass)
+	depWorkloads, err := c.GetDeploymentWorkloads(namespace, storageClass)
 	if err != nil {
 		return nil, err
 	}
 
 	workloads = append(workloads, depWorkloads...)
 
-	stsWorkloads, err := c.GetStatefulSetWorkloads(ctx, namespace, storageClass)
+	stsWorkloads, err := c.GetStatefulSetWorkloads(namespace, storageClass)
 	if err != nil {
 		return nil, err
 	}

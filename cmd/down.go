@@ -45,10 +45,10 @@ func down() {
 
 	// FIXME: add file check
 
-	pvcscaler, err := pvcscaler.New(kubeconfig, namespaces, storageClass, dryRun)
+	pvcscaler, err := pvcscaler.New(ctx, kubeconfig, namespaces, storageClass, dryRun)
 	exitOnError(err)
 
-	err = pvcscaler.Down(ctx, outputFile)
+	err = pvcscaler.Down(outputFile)
 	exitOnError(err)
 
 }

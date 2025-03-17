@@ -10,6 +10,7 @@ import (
 
 type PVCscaler struct {
 	k8sClient *k8s.Client
+	context   context.Context
 	dryRun    bool
 
 	workloads    []k8s.Workload
@@ -17,21 +18,22 @@ type PVCscaler struct {
 	storageClass string
 }
 
-func New(kubeconfig string, namespaces []string, storageClass string, dryRun bool) (*PVCscaler, error) {
-	k8sClient, err := k8s.New(context.TODO(), kubeconfig, dryRun)
+func New(ctx context.Context, kubeconfig string, namespaces []string, storageClass string, dryRun bool) (*PVCscaler, error) {
+	k8sClient, err := k8s.New(ctx, kubeconfig, dryRun)
 	if err != nil {
 		return nil, err
 	}
 
 	return &PVCscaler{
 		k8sClient:    k8sClient,
+		context:      ctx,
 		dryRun:       dryRun,
 		namespaces:   namespaces,
 		storageClass: storageClass,
 	}, nil
 }
 
-func (p *PVCscaler) getWorkloads(ctx context.Context, namespaces []string, storageClass string) error {
+func (p *PVCscaler) getWorkloads(namespaces []string, storageClass string) error {
 	var err error
 
 	if len(namespaces) == 1 && namespaces[0] == "all" {
@@ -49,10 +51,10 @@ func (p *PVCscaler) getWorkloads(ctx context.Context, namespaces []string, stora
 		go func(ns string) {
 			defer wg.Done()
 			select {
-			case <-ctx.Done():
+			case <-p.context.Done():
 				return
 			default:
-				workloads, err := p.k8sClient.GetWorkloads(ctx, ns, storageClass)
+				workloads, err := p.k8sClient.GetWorkloads(ns, storageClass)
 				if err != nil {
 					errChan <- err
 					return
@@ -72,8 +74,8 @@ func (p *PVCscaler) getWorkloads(ctx context.Context, namespaces []string, stora
 	return nil
 }
 
-func (p *PVCscaler) Down(ctx context.Context, outputFile string) error {
-	err := p.getWorkloads(ctx, p.namespaces, p.storageClass)
+func (p *PVCscaler) Down(outputFile string) error {
+	err := p.getWorkloads(p.namespaces, p.storageClass)
 	if err != nil {
 		return err
 	}
@@ -100,7 +102,7 @@ func (p *PVCscaler) Down(ctx context.Context, outputFile string) error {
 	return nil
 }
 
-func (p *PVCscaler) Up(ctx context.Context, outputFile string) error {
+func (p *PVCscaler) Up(outputFile string) error {
 	var dataset dataset
 
 	err := dataset.ReadFromFile(outputFile)

@@ -33,11 +33,11 @@ func up() {
 
 	processSignal(cancelFunc)
 
-	pvcscaler, err := pvcscaler.New(kubeconfig, namespaces, storageClass, dryRun)
+	pvcscaler, err := pvcscaler.New(ctx, kubeconfig, namespaces, storageClass, dryRun)
 	exitOnError(err)
 
 	fmt.Println(inputFile)
 
-	err = pvcscaler.Up(ctx, inputFile)
+	err = pvcscaler.Up(inputFile)
 	exitOnError(err)
 }

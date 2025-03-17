@@ -20,6 +20,10 @@ const (
 	namespace = "default"
 )
 
+type k8sResource[T any] struct {
+	resource T
+}
+
 func int32PTR(i int32) *int32 { return &i }
 
 func NewFakeClient() kubernetes.Interface {
@@ -32,7 +36,7 @@ func createNamespace(c kubernetes.Interface) *corev1.Namespace {
 			Name: "default",
 		},
 	}
-	ns, _ := c.CoreV1().Namespaces().Create(context.Background(), nsObj, metav1.CreateOptions{})
+	ns, _ := c.CoreV1().Namespaces().Create(context.TODO(), nsObj, metav1.CreateOptions{})
 	return ns
 }
 
@@ -60,7 +64,7 @@ func createDeployment(c kubernetes.Interface) *appsv1.Deployment {
 			Replicas: int32PTR(1),
 		},
 	}
-	dep, _ := c.AppsV1().Deployments(namespace).Create(context.Background(), depObj, metav1.CreateOptions{})
+	dep, _ := c.AppsV1().Deployments(namespace).Create(context.TODO(), depObj, metav1.CreateOptions{})
 	return dep
 }
 
@@ -100,7 +104,7 @@ func createPVC(c kubernetes.Interface, name, namespace, storageClass string) *co
 			StorageClassName: &storageClass,
 		},
 	}
-	pvc, _ := c.CoreV1().PersistentVolumeClaims(namespace).Create(context.Background(), pvcObj, metav1.CreateOptions{})
+	pvc, _ := c.CoreV1().PersistentVolumeClaims(namespace).Create(context.TODO(), pvcObj, metav1.CreateOptions{})
 	return pvc
 }
 
@@ -133,7 +137,7 @@ func TestNew(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		pvcscaler, err := New(tt.kubeconfig, tt.namespace, tt.storageClass, tt.dryRun)
+		pvcscaler, err := New(t.Context(), tt.kubeconfig, tt.namespace, tt.storageClass, tt.dryRun)
 		if tt.error {
 			assert.Error(t, err)
 		} else {
@@ -144,10 +148,6 @@ func TestNew(t *testing.T) {
 }
 
 func TestGetWorkloads(t *testing.T) {
-	type k8sResource[T any] struct {
-		resource T
-	}
-
 	fakeClient := NewFakeClient()
 	createNamespace(fakeClient)
 	createPVC(fakeClient, "nginx-pvc", namespace, "standard")
@@ -177,13 +177,14 @@ func TestGetWorkloads(t *testing.T) {
 
 	for _, tt := range tests {
 		pvcscaler := &PVCscaler{
-			k8sClient:    &k8s.Client{ClientSet: fakeClient},
+			k8sClient:    &k8s.Client{ClientSet: fakeClient, Context: t.Context()},
+			context:      t.Context(),
 			namespaces:   tt.namespace,
 			storageClass: tt.storageClass,
 		}
 
 		t.Run(tt.name, func(t *testing.T) {
-			err := pvcscaler.getWorkloads(context.TODO(), tt.namespace, tt.storageClass)
+			err := pvcscaler.getWorkloads(tt.namespace, tt.storageClass)
 
 			if tt.error {
 				assert.Error(t, err)
@@ -196,10 +197,6 @@ func TestGetWorkloads(t *testing.T) {
 }
 
 func TestDown(t *testing.T) {
-	type k8sResource[T any] struct {
-		resource T
-	}
-
 	fakeClient := NewFakeClient()
 	createNamespace(fakeClient)
 	createPVC(fakeClient, "nginx-pvc", namespace, "standard")
@@ -229,13 +226,14 @@ func TestDown(t *testing.T) {
 
 	for _, tt := range tests {
 		pvcscaler := &PVCscaler{
-			k8sClient:    &k8s.Client{ClientSet: fakeClient},
+			k8sClient:    &k8s.Client{ClientSet: fakeClient, Context: t.Context()},
+			context:      t.Context(),
 			namespaces:   tt.namespace,
 			storageClass: tt.storageClass,
 		}
 
 		t.Run(tt.name, func(t *testing.T) {
-			err := pvcscaler.Down(t.Context(), tt.actualOutputFile)
+			err := pvcscaler.Down(tt.actualOutputFile)
 
 			if tt.error {
 				assert.Error(t, err)
@@ -252,10 +250,6 @@ func TestDown(t *testing.T) {
 }
 
 func TestUp(t *testing.T) {
-	type k8sResource[T any] struct {
-		resource T
-	}
-
 	fakeClient := NewFakeClient()
 	createNamespace(fakeClient)
 
@@ -290,7 +284,7 @@ func TestUp(t *testing.T) {
 		}
 
 		t.Run(tt.name, func(t *testing.T) {
-			err := pvcscaler.Up(t.Context(), tt.inputFile)
+			err := pvcscaler.Up(tt.inputFile)
 
 			if tt.error {
 				assert.Error(t, err)
