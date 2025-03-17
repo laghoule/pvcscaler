@@ -12,16 +12,10 @@ type dataset struct {
 	Workloads []k8s.Workload `json:"workloads"`
 }
 
-func getDataset(worloads []k8s.Workload) dataset {
-	var dataset dataset
-	dataset.Workloads = append(dataset.Workloads, worloads...)
-
-	return dataset
-}
-
-// TODO: weird name
-func (d *dataset) toWorkloads() []k8s.Workload {
-	return d.Workloads
+func newDataset(workloads []k8s.Workload) dataset {
+	return dataset{
+		Workloads: workloads,
+	}
 }
 
 func (d *dataset) WriteToFile(filename string) error {

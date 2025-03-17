@@ -118,16 +118,9 @@ func TestWriteToFile(t *testing.T) {
 	}
 }
 
-func TestGetDataset(t *testing.T) {
+func TestNewDataset(t *testing.T) {
 	expected := createDataset()
 	workloads := createWorkloads()
-	actual := getDataset(workloads)
-	assert.Equal(t, expected, actual)
-}
-
-func TestToWorkloads(t *testing.T) {
-	expected := createWorkloads()
-	dataset := createDataset()
-	actual := dataset.toWorkloads()
+	actual := newDataset(workloads)
 	assert.Equal(t, expected, actual)
 }

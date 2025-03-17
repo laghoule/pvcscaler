@@ -90,7 +90,7 @@ func (p *PVCscaler) Down(outputFile string) error {
 		}
 	}
 
-	dataset := getDataset(p.workloads)
+	dataset := newDataset(p.workloads)
 
 	if outputFile != "" {
 		err = dataset.WriteToFile(outputFile)
@@ -112,8 +112,7 @@ func (p *PVCscaler) Up(outputFile string) error {
 
 	fmt.Println("Scaling up these workloads:")
 
-	workloads := dataset.toWorkloads()
-	for _, workload := range workloads {
+	for _, workload := range dataset.Workloads {
 		fmt.Printf(" ✴️ %s %s/%s\n", workload.Kind, workload.Namespace, workload.Name)
 		err := workload.ScaleUp(p.k8sClient, workload.Namespace, workload.Name, workload.Kind, int32(workload.Replicas))
 		if err != nil {
