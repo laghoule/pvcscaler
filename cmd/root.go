@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"syscall"
 	"path/filepath"
+	"syscall"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -28,7 +28,10 @@ var rootCmd = &cobra.Command{
 	Long:              `A Fast and and easy way to scale down and up pods with pvc.`,
 	CompletionOptions: cobra.CompletionOptions{DisableDefaultCmd: true},
 	Run: func(cmd *cobra.Command, args []string) {
-		//TODO: Do Stuff Here
+		if err := cmd.Help(); err != nil {
+			fmt.Println("Error displaying help:", err)
+			os.Exit(1)
+		}
 	},
 }
 
