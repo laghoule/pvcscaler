@@ -3,6 +3,8 @@ package k8s
 import (
 	"testing"
 
+	"laghoule/pvcscaler/internal/pkg/test"
+
 	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -10,7 +12,7 @@ import (
 )
 
 func createDeploymentWorkload(c kubernetes.Interface) *Workload {
-	createDeployment(c)
+	test.CreateDeployment(c)
 	return &Workload{
 		Name:      "nginx-deployment",
 		Namespace: namespace,
@@ -20,7 +22,7 @@ func createDeploymentWorkload(c kubernetes.Interface) *Workload {
 }
 
 func createStatefulsetWorkload(c kubernetes.Interface) *Workload {
-	createStatefulSet(c)
+	test.CreateStatefulSet(c)
 	return &Workload{
 		Name:      "nginx-statefulset",
 		Namespace: namespace,
@@ -30,12 +32,12 @@ func createStatefulsetWorkload(c kubernetes.Interface) *Workload {
 }
 
 func TestGetWorkloads(t *testing.T) {
-	c, err := NewFakeClient(t)
+	c, err := NewTestClient(t)
 	if err != nil {
 		t.Error(err)
 	}
 
-	createDeployment(c.ClientSet)
+	test.CreateDeployment(c.ClientSet)
 	createPVC(c.ClientSet, "nginx-pvc", namespace, "standard")
 
 	wloads, err := c.GetWorkloads(namespace, "standard")
@@ -47,7 +49,7 @@ func TestGetWorkloads(t *testing.T) {
 }
 
 func TestGetDeploymentWorkloads(t *testing.T) {
-	c, err := NewFakeClient(t)
+	c, err := NewTestClient(t)
 	if err != nil {
 		t.Error(err)
 	}
@@ -63,7 +65,7 @@ func TestGetDeploymentWorkloads(t *testing.T) {
 	}{
 		{
 			name:         "deployment with pvc",
-			dep:          createDeployment(c.ClientSet),
+			dep:          test.CreateDeployment(c.ClientSet),
 			storageClass: "standard",
 			expected: []Workload{
 				{
@@ -77,7 +79,7 @@ func TestGetDeploymentWorkloads(t *testing.T) {
 		},
 		{
 			name:         "deployment with pvc and wrong storage class",
-			dep:          createDeployment(c.ClientSet),
+			dep:          test.CreateDeployment(c.ClientSet),
 			storageClass: "not found",
 			expected:     []Workload{},
 			error:        false,
@@ -107,12 +109,12 @@ func TestGetDeploymentWorkloads(t *testing.T) {
 }
 
 func TestGetStatefulSetWorkloads(t *testing.T) {
-	c, err := NewFakeClient(t)
+	c, err := NewTestClient(t)
 	if err != nil {
 		t.Error(err)
 	}
 
-	createStatefulSet(c.ClientSet)
+	test.CreateStatefulSet(c.ClientSet)
 	createPVC(c.ClientSet, "nginx-pvc", namespace, "standard")
 
 	wloads, err := c.GetStatefulSetWorkloads(namespace, "standard")

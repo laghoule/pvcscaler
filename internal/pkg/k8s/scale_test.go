@@ -3,26 +3,28 @@ package k8s
 import (
 	"testing"
 
+	"laghoule/pvcscaler/internal/pkg/test"
+
 	assert "github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestGetReplicas(t *testing.T) {
-	type test[T any] struct {
+	type testCase[T any] struct {
 		name     string
 		workload T
 		expected int32
 		error    bool
 	}
 
-	c, err := NewFakeClient(t)
+	c, err := NewTestClient(t)
 	assert.NoError(t, err)
 
-	testsDep := []test[*appsv1.Deployment]{
+	testsDep := []testCase[*appsv1.Deployment]{
 		{
 			name:     "deployment",
-			workload: createDeployment(c.ClientSet),
+			workload: test.CreateDeployment(c.ClientSet),
 			expected: 1,
 			error:    false,
 		},
@@ -34,10 +36,10 @@ func TestGetReplicas(t *testing.T) {
 		},
 	}
 
-	testsSts := []test[*appsv1.StatefulSet]{
+	testsSts := []testCase[*appsv1.StatefulSet]{
 		{
 			name:     "statefulset",
-			workload: createStatefulSet(c.ClientSet),
+			workload: test.CreateStatefulSet(c.ClientSet),
 			expected: 1,
 			error:    false,
 		},
@@ -49,16 +51,16 @@ func TestGetReplicas(t *testing.T) {
 		},
 	}
 
-	testUnsupportedKind := test[*appsv1.DaemonSet]{
+	testUnsupportedKind := testCase[*appsv1.DaemonSet]{
 		name:     "unknown kind",
-		workload: createDaemonSet(c.ClientSet),
+		workload: test.CreateDaemonSet(c.ClientSet),
 		expected: 0,
 		error:    true,
 	}
 
 	for _, tt := range testsDep {
 		t.Run(tt.name, func(t *testing.T) {
-			c, err := NewFakeClient(t)
+			c, err := NewTestClient(t)
 			assert.NoError(t, err)
 
 			_, err = c.ClientSet.AppsV1().Deployments(namespace).Create(t.Context(), tt.workload, metav1.CreateOptions{})
@@ -87,7 +89,7 @@ func TestGetReplicas(t *testing.T) {
 	}
 
 	t.Run(testUnsupportedKind.name, func(t *testing.T) {
-		c, err := NewFakeClient(t)
+		c, err := NewTestClient(t)
 		assert.NoError(t, err)
 
 		_, err = c.getReplicas(testUnsupportedKind.workload.Namespace, testUnsupportedKind.workload.Name, "DaemonSet")
@@ -96,7 +98,7 @@ func TestGetReplicas(t *testing.T) {
 }
 
 func TestScaleDown(t *testing.T) {
-	c, err := NewFakeClient(t)
+	c, err := NewTestClient(t)
 	assert.NoError(t, err)
 
 	tests := []struct {
@@ -125,7 +127,7 @@ func TestScaleDown(t *testing.T) {
 }
 
 func TestScaleUp(t *testing.T) {
-	c, err := NewFakeClient(t)
+	c, err := NewTestClient(t)
 	assert.NoError(t, err)
 
 	tests := []struct {
@@ -153,7 +155,7 @@ func TestScaleUp(t *testing.T) {
 }
 
 func TestScale(t *testing.T) {
-	c, err := NewFakeClient(t)
+	c, err := NewTestClient(t)
 	assert.NoError(t, err)
 
 	tests := []struct {

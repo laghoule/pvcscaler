@@ -25,7 +25,7 @@ func createPVC(c kubernetes.Interface, name, namespace, storageClass string) *co
 }
 
 func TestIsStorageClassMatched(t *testing.T) {
-	c, err := NewFakeClient(t)
+	c, err := NewTestClient(t)
 	assert.NoError(t, err)
 
 	createPVC(c.ClientSet, "test-pvc", "default", "standard")
