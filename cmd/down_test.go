@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func (t *testing.T) {
+func TestValidNamespaces(t *testing.T) {
 	tests := []struct {
 		name       string
 		namespaces []string
