@@ -5,61 +5,76 @@
 [![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=laghoule_pvcscaler&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=laghoule_pvcscaler)
 [![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=laghoule_pvcscaler&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=laghoule_pvcscaler)
 
-
 PVCScaler is a command-line tool for scaling pods with Persistent Volume Claims (PVC) in Kubernetes.
 
 ## Features
 
 - **Scale up**: Scale up pods defined in the input state file.
 - **Scale down**: Scale down pods with PVCs, in specified namespaces and storage class with optional output state file.
-- **Version display**: Show the current version, git commit, and build date.
 
 ## Prerequisites
 
-- Go 1.16+
 - Configured Kubernetes cluster
 - Properly configured kubeconfig file
-
-## Installation
-
-Clone the repository and build the executable:
-
-```bash
-git clone https://github.com/laghoule/pvcscaler.git 
-cd pvcscaler 
-go build -o pvcscaler
-```
 
 ## Usage
 
 ### Basic Commands
 
-- **Scale up**
+```text
+A Fast and and easy way to scale down and up pods with pvc.
 
-```bash
-./pvcscaler up -i <inputFile>
+Usage:
+  pvcscaler [flags]
+  pvcscaler [command]
+
+Available Commands:
+  down        Scale down
+  help        Help about any command
+  up          Scale up
+  version     Show version
+
+Flags:
+  -d, --dry-run             dry run mode
+  -h, --help                help for pvcscaler
+  -k, --kubeconfig string   path to kubeconfig (default "/home/user/.kube/config")
 ```
 
-- **Scale down**
+### Down
 
-```bash
-./pvcscaler down -n <namespace> -s <storageClass> -o <outputFile>
+```text
+Scale down pods with pvc.
+
+Usage:
+  pvcscaler down [flags]
+
+Flags:
+  -h, --help                    help for down
+  -n, --namespace stringArray   namespace to use (default [all])
+  -o, --outputFile string       pvscaler state file
+  -s, --storageclass string     storage class to target (default "default")
+
+Global Flags:
+  -d, --dry-run             dry run mode
+  -k, --kubeconfig string   path to kubeconfig (default "/home/user/.kube/config")
 ```
 
-- **Show version**
+### Up
 
-```bash
-./pvcscaler version
+```text
+Scale up pods with pvc.
+
+Usage:
+  pvcscaler up [flags]
+
+Flags:
+  -h, --help               help for up
+  -i, --inputFile string   pvscaler state file
+
+Global Flags:
+  -d, --dry-run             dry run mode
+  -k, --kubeconfig string   path to kubeconfig (default "/home/user/.kube/config")
 ```
-
-### Options
-
-- `--kubeconfig, -k` : Path to the kubeconfig file (default: `$HOME/.kube/config`).
-- `--dry-run, -d` : Dry run mode, makes no actual changes.
-- `--namespace, -n` : Namespace to use (default: `all`).
-- `--storageclass, -s` : Storage class to target (default: `default`).
-- `--inputFile, -i` : State file for the `up` command.
-- `--outputFile, -o` : State file for the `down` command.
 
 ## Contributing
 
