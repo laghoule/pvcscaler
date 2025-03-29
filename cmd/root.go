@@ -17,6 +17,9 @@ var (
 	kubeconfig string
 	dryRun     bool
 
+	namespaces   []string
+	storageClass string
+
 	version   = "devel"
 	gitCommit = "0000000000000000000000000000000000000000"
 	buildDate = time.DateTime
@@ -64,4 +67,13 @@ func exitOnError(err error) {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+}
+
+func validNamespaces(namespaces []string) bool {
+	for _, namespace := range namespaces {
+		if namespace == "all" && len(namespaces) > 1 {
+			return false
+		}
+	}
+	return true
 }

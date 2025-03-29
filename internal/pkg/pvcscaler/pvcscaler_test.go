@@ -197,3 +197,40 @@ func TestUp(t *testing.T) {
 		})
 	}
 }
+
+func TestList(t *testing.T) {
+	fakeClient := test.NewFakeClient()
+	test.CreateNamespace(fakeClient)
+	test.CreatePVC(fakeClient, "nginx-pvc", test.Namespace, "standard")
+	test.CreateDeployment(fakeClient)
+
+	tests := []struct {
+		name      string
+		namespace []string
+		error     bool
+	}{
+		{
+			name:      "List deployment for all namespaces",
+			namespace: []string{"all"},
+			error:     false,
+		},
+	}
+
+	for _, tt := range tests {
+		pvcscaler := &PVCscaler{
+			k8sClient:  &k8s.Client{ClientSet: fakeClient, Context: t.Context()},
+			context:    t.Context(),
+			namespaces: tt.namespace,
+		}
+
+		t.Run(tt.name, func(t *testing.T) {
+			err := pvcscaler.PrintList()
+
+			if tt.error {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}

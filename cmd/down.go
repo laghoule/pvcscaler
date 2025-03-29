@@ -3,7 +3,6 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"os"
 
 	"laghoule/pvcscaler/internal/pkg/pvcscaler"
 
@@ -11,9 +10,7 @@ import (
 )
 
 var (
-	namespaces   []string
-	storageClass string
-	outputFile   string
+	outputFile string
 )
 
 var downCmd = &cobra.Command{
@@ -39,8 +36,7 @@ func down() {
 	processSignal(cancelFunc)
 
 	if !validNamespaces(namespaces) {
-		fmt.Printf("error: invalid namespace, cannot mix `all` with other namespace\n")
-		os.Exit(1)
+		exitOnError(fmt.Errorf("error: invalid namespace, cannot mix `all` with other namespace\n"))
 	}
 
 	// FIXME: add file check
@@ -51,13 +47,4 @@ func down() {
 	err = pvcscaler.Down(outputFile)
 	exitOnError(err)
 
-}
-
-func validNamespaces(namespaces []string) bool {
-	for _, namespace := range namespaces {
-		if namespace == "all" && len(namespaces) > 1 {
-			return false
-		}
-	}
-	return true
 }

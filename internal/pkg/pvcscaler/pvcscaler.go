@@ -6,6 +6,9 @@ import (
 	"sync"
 
 	"laghoule/pvcscaler/internal/pkg/k8s"
+
+	"github.com/fatih/color"
+	"github.com/rodaine/table"
 )
 
 type PVCscaler struct {
@@ -120,5 +123,23 @@ func (p *PVCscaler) Up(outputFile string) error {
 		}
 	}
 
+	return nil
+}
+
+func (p *PVCscaler) PrintList() error {
+	err := p.getWorkloads(p.namespaces, p.storageClass)
+	if err != nil {
+		return err
+	}
+
+	headerFmt := color.New(color.FgGreen, color.Underline).SprintfFunc()
+	tbl := table.New("Namespace", "Name", "Type", "Replicas", "StorageClass")
+	tbl.WithHeaderFormatter(headerFmt)
+
+	for _, workload := range p.workloads {
+		tbl.AddRow(workload.Namespace, workload.Name, workload.Kind, workload.Replicas, p.storageClass)
+	}
+
+	tbl.Print()
 	return nil
 }
