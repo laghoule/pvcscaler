@@ -33,7 +33,7 @@ jobs:
         run: echo DATE=$(date) >> ${GITHUB_ENV}
       - uses: wangyoucao577/go-release-action@v1.53
         with:
-          release_name: ${{ github.event.release.tag_name }}
+          release_tag: ${{ github.event.release.tag_name }}
           github_token: ${{ secrets.PVCSCALER_TOKEN }}
           goos: ${{ matrix.goos }}
           goarch: ${{ matrix.goarch }}
