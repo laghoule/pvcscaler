@@ -9,8 +9,9 @@ PVCScaler is a command-line tool for scaling pods with Persistent Volume Claims 
 
 ## Features
 
-- **Scale up**: Scale up pods defined in the input state file.
-- **Scale down**: Scale down pods with PVCs, in specified namespaces and storage class with optional output state file.
+- List workload with PVC of the specified storage class.
+- Scale up pods defined in the input state file.
+- Scale down pods with PVCs, in specified namespaces and storage class with optional output state file.
 
 ## Prerequisites
 
@@ -38,6 +39,24 @@ Flags:
   -d, --dry-run             dry run mode
   -h, --help                help for pvcscaler
   -k, --kubeconfig string   path to kubeconfig (default "/home/user/.kube/config")
+```
+
+### List
+
+```text
+List workloads with pvc in the specified storage class.
+
+Usage:
+  pvcscaler list [flags]
+
+Flags:
+  -h, --help                    help for list
+  -n, --namespace stringArray   namespace to use (default [all])
+  -s, --storageclass string     storage class to target (default "default")
+
+Global Flags:
+  -d, --dry-run             dry run mode
+  -k, --kubeconfig string   path to kubeconfig (default "/home/pgauthier/.kube/config")
 ```
 
 ### Down
