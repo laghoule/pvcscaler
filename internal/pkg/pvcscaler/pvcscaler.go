@@ -96,7 +96,7 @@ func (p *PVCscaler) Down(outputFile string) error {
 	dataset := newDataset(p.workloads)
 
 	if outputFile != "" {
-		err = dataset.WriteToFile(outputFile)
+		err = dataset.writeToFile(outputFile)
 		if err != nil {
 			return err
 		}
@@ -108,7 +108,7 @@ func (p *PVCscaler) Down(outputFile string) error {
 func (p *PVCscaler) Up(outputFile string) error {
 	var dataset dataset
 
-	err := dataset.ReadFromFile(outputFile)
+	err := dataset.readFromFile(outputFile)
 	if err != nil {
 		return err
 	}

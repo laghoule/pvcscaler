@@ -18,7 +18,7 @@ func newDataset(workloads []k8s.Workload) dataset {
 	}
 }
 
-func (d *dataset) WriteToFile(filename string) error {
+func (d *dataset) writeToFile(filename string) error {
 	jsonData, err := json.MarshalIndent(d.Workloads, "", "  ")
 	if err != nil {
 		return fmt.Errorf("error marshaling JSON: %v", err)
@@ -32,7 +32,7 @@ func (d *dataset) WriteToFile(filename string) error {
 	return nil
 }
 
-func (d *dataset) ReadFromFile(filename string) error {
+func (d *dataset) readFromFile(filename string) error {
 	data, err := os.ReadFile(filename)
 	if err != nil {
 		return err

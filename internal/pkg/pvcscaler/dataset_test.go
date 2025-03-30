@@ -56,7 +56,7 @@ func TestReadFromFile(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			dataset := dataset{}
-			err := dataset.ReadFromFile(tt.filePath)
+			err := dataset.readFromFile(tt.filePath)
 			if tt.error != nil {
 				assert.Error(t, err)
 				assert.Contains(t, err.Error(), tt.error.Error())
@@ -102,7 +102,7 @@ func TestWriteToFile(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := tt.dataset.WriteToFile(tt.actualOutputFile)
+			err := tt.dataset.writeToFile(tt.actualOutputFile)
 
 			if tt.error {
 				assert.Error(t, err)
