@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"laghoule/pvcscaler/internal/pkg/pvcscaler"
+	"github.com/laghoule/pvcscaler/internal/pkg/pvcscaler"
 
 	"github.com/spf13/cobra"
 )

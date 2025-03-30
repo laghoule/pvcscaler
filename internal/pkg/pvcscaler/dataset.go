@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"laghoule/pvcscaler/internal/pkg/k8s"
+	"github.com/laghoule/pvcscaler/internal/pkg/k8s"
 )
 
 type dataset struct {

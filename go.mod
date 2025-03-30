@@ -1,4 +1,4 @@
-module laghoule/pvcscaler
+module github.com/laghoule/pvcscaler
 
 go 1.24.1
 

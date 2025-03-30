@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"laghoule/pvcscaler/internal/pkg/test"
+	"github.com/laghoule/pvcscaler/internal/pkg/test"
 
 	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"

@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"laghoule/pvcscaler/internal/pkg/k8s"
-	"laghoule/pvcscaler/internal/pkg/test"
+	"github.com/laghoule/pvcscaler/internal/pkg/k8s"
+	"github.com/laghoule/pvcscaler/internal/pkg/test"
 
 	assert "github.com/stretchr/testify/assert"
 )

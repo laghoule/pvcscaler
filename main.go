@@ -1,7 +1,7 @@
 package main
 
 import (
-	"laghoule/pvcscaler/cmd"
+	"github.com/laghoule/pvcscaler/cmd"
 )
 
 func main() {

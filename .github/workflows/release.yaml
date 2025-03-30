@@ -40,6 +40,6 @@ jobs:
           goversion: "1.24.1"
           pre_command: export CGO_ENABLED=0
           build_flags: -v
-          ldflags: -X 'cmd.version=${{env.VERSION}}' -X 'cmd.gitCommit=${{ github.sha }}' -X 'cmd.buildDate=${{ env.DATE }}'
+          ldflags: -X 'github.com/laghoule/pvcscaler/cmd.version=${{env.VERSION}}' -X 'github.com/laghoule/pvcscaler/cmd.gitCommit=${{ github.sha }}' -X 'github.com/laghoule/pvcscaler/cmd.buildDate=${{ env.DATE }}'
           extra_files: LICENSE README.md
           retry: 10

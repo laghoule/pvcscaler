@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sync"
 
-	"laghoule/pvcscaler/internal/pkg/k8s"
+	"github.com/laghoule/pvcscaler/internal/pkg/k8s"
 
 	"github.com/fatih/color"
 	"github.com/rodaine/table"
