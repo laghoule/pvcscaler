@@ -31,6 +31,8 @@ jobs:
         run: echo VERSION=$(echo ${GITHUB_REF} | rev | cut -d'/' -f 1 | rev ) >> ${GITHUB_ENV}
       - name: Set DATE env
         run: echo DATE=$(date) >> ${GITHUB_ENV}
+      - name: debug
+        run: find .
       - uses: wangyoucao577/go-release-action@v1.53
         with:
           github_token: ${{ secrets.PVCSCALER_TOKEN }}
