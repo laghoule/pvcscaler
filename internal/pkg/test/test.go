@@ -11,7 +11,16 @@ import (
 )
 
 const (
-	Namespace = "default"
+	Namespace        = "default"
+	StorageClass     = "standard"
+	DeploymentName   = "nginx-deployment"
+	StatefulSetName  = "nginx-statefulset"
+	DaemonSetName    = "nginx-daemonset"
+	PodName          = "nginx"
+	PodImage         = "nginx"
+	PvcName          = "nginx-pvc"
+	ClaimName        = "nginx-pvc"
+	StorageClassName = "standard"
 )
 
 type K8sResource[T any] struct {
@@ -27,7 +36,7 @@ func NewFakeClient() kubernetes.Interface {
 func CreateNamespace(c kubernetes.Interface) *corev1.Namespace {
 	nsObj := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "default",
+			Name: Namespace,
 		},
 	}
 	ns, _ := c.CoreV1().Namespaces().Create(context.TODO(), nsObj, metav1.CreateOptions{})
@@ -37,7 +46,7 @@ func CreateNamespace(c kubernetes.Interface) *corev1.Namespace {
 func CreateDeployment(c kubernetes.Interface) *appsv1.Deployment {
 	depObj := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "nginx-deployment",
+			Name:      DeploymentName,
 			Namespace: Namespace,
 		},
 		Spec: appsv1.DeploymentSpec{
@@ -45,10 +54,10 @@ func CreateDeployment(c kubernetes.Interface) *appsv1.Deployment {
 				Spec: corev1.PodSpec{
 					Volumes: []corev1.Volume{
 						{
-							Name: "nginx-pvc",
+							Name: PvcName,
 							VolumeSource: corev1.VolumeSource{
 								PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-									ClaimName: "nginx-pvc",
+									ClaimName: ClaimName,
 								},
 							},
 						},
@@ -63,10 +72,10 @@ func CreateDeployment(c kubernetes.Interface) *appsv1.Deployment {
 }
 
 func CreateStatefulSet(c kubernetes.Interface) *appsv1.StatefulSet {
-	scName := "standard"
+	scName := StorageClassName
 	stsObj := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "nginx-statefulset",
+			Name:      StatefulSetName,
 			Namespace: Namespace,
 		},
 		Spec: appsv1.StatefulSetSpec{
@@ -74,10 +83,10 @@ func CreateStatefulSet(c kubernetes.Interface) *appsv1.StatefulSet {
 			VolumeClaimTemplates: []corev1.PersistentVolumeClaim{
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "nginx-pvc",
+						Name: PvcName,
 					},
 					Spec: corev1.PersistentVolumeClaimSpec{
-						VolumeName:       "nginx-pvc",
+						VolumeName:       ClaimName,
 						StorageClassName: &scName,
 					},
 				},
@@ -91,7 +100,7 @@ func CreateStatefulSet(c kubernetes.Interface) *appsv1.StatefulSet {
 func CreateDaemonSet(c kubernetes.Interface) *appsv1.DaemonSet {
 	dsObj := &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "nginx-daemonset",
+			Name:      DaemonSetName,
 			Namespace: Namespace,
 		},
 		Spec: appsv1.DaemonSetSpec{
@@ -99,8 +108,8 @@ func CreateDaemonSet(c kubernetes.Interface) *appsv1.DaemonSet {
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name:  "nginx",
-							Image: "nginx",
+							Name:  PodName,
+							Image: PodImage,
 						},
 					},
 				},
