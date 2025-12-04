@@ -5,7 +5,7 @@ go 1.24.1
 require (
 	github.com/fatih/color v1.18.0
 	github.com/rodaine/table v1.3.0
-	github.com/spf13/cobra v1.10.1
+	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
 	k8s.io/api v0.34.2
 	k8s.io/apimachinery v0.34.2
