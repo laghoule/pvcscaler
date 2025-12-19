@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go: ["1.24.x"]
+        go: ["1.25.x"]
     steps:
       - uses: actions/checkout@v6
       - name: Setup Go for use with actions
@@ -37,7 +37,7 @@ jobs:
           github_token: ${{ secrets.PVCSCALER_TOKEN }}
           goos: ${{ matrix.goos }}
           goarch: ${{ matrix.goarch }}
-          goversion: "1.24.1"
+          goversion: "1.25.5"
           pre_command: export CGO_ENABLED=0
           build_flags: -v
           ldflags: -X 'github.com/laghoule/pvcscaler/cmd.version=${{env.VERSION}}' -X 'github.com/laghoule/pvcscaler/cmd.gitCommit=${{ github.sha }}' -X 'github.com/laghoule/pvcscaler/cmd.buildDate=${{ env.DATE }}'
