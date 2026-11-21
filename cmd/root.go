@@ -38,6 +38,7 @@ var rootCmd = &cobra.Command{
 	},
 }
 
+// Execute runs the pvcscaler root command.
 func Execute() {
 	cobra.CheckErr(rootCmd.Execute())
 }

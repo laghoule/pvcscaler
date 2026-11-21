@@ -18,6 +18,7 @@ const (
 	namespace = "default"
 )
 
+// NewTestClient returns a new kubernetes client for testing
 func NewTestClient(t *testing.T) (*Client, error) {
 	return &Client{
 		ClientSet: fake.NewSimpleClientset(),

@@ -24,16 +24,19 @@ const (
 	StorageClassName = "standard"
 )
 
+// K8sResource wraps a Kubernetes resource for table-driven tests.
 type K8sResource[T any] struct {
 	Resource T
 }
 
 func int32PTR(i int32) *int32 { return &i }
 
+// NewFakeClient returns an in-memory Kubernetes clientset for tests.
 func NewFakeClient() kubernetes.Interface {
 	return fake.NewSimpleClientset()
 }
 
+// CreateNamespace creates the shared test namespace.
 func CreateNamespace(c kubernetes.Interface) *corev1.Namespace {
 	nsObj := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
@@ -44,6 +47,7 @@ func CreateNamespace(c kubernetes.Interface) *corev1.Namespace {
 	return ns
 }
 
+// CreateDeployment creates a Deployment that mounts the shared PVC.
 func CreateDeployment(c kubernetes.Interface) *appsv1.Deployment {
 	depObj := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -72,6 +76,8 @@ func CreateDeployment(c kubernetes.Interface) *appsv1.Deployment {
 	return dep
 }
 
+// CreateStatefulSet creates a StatefulSet with a volume claim template using
+// StorageClassName.
 func CreateStatefulSet(c kubernetes.Interface) *appsv1.StatefulSet {
 	scName := StorageClassName
 	stsObj := &appsv1.StatefulSet{
@@ -98,6 +104,7 @@ func CreateStatefulSet(c kubernetes.Interface) *appsv1.StatefulSet {
 	return sts
 }
 
+// CreateDaemonSet creates a DaemonSet without persistent volumes.
 func CreateDaemonSet(c kubernetes.Interface) *appsv1.DaemonSet {
 	dsObj := &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
@@ -121,6 +128,7 @@ func CreateDaemonSet(c kubernetes.Interface) *appsv1.DaemonSet {
 	return ds
 }
 
+// CreatePVC creates a PVC with the given name, namespace and storage class.
 func CreatePVC(c kubernetes.Interface, name, namespace, storageClass string) *corev1.PersistentVolumeClaim {
 	pvcObj := &corev1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
@@ -135,6 +143,7 @@ func CreatePVC(c kubernetes.Interface, name, namespace, storageClass string) *co
 	return pvc
 }
 
+// CreateNamespaceNamed creates a namespace with the given name.
 func CreateNamespaceNamed(c kubernetes.Interface, name string) *corev1.Namespace {
 	nsObj := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
@@ -145,6 +154,8 @@ func CreateNamespaceNamed(c kubernetes.Interface, name string) *corev1.Namespace
 	return ns
 }
 
+// CreateStorageClass creates a StorageClass, optionally marked as the cluster
+// default.
 func CreateStorageClass(c kubernetes.Interface, name string, defaultClass bool) *storagev1.StorageClass {
 	annotations := map[string]string{}
 	if defaultClass {
@@ -162,6 +173,8 @@ func CreateStorageClass(c kubernetes.Interface, name string, defaultClass bool) 
 	return sc
 }
 
+// CreateDeploymentNamed creates a Deployment named name that mounts the given
+// PVC claim names.
 func CreateDeploymentNamed(c kubernetes.Interface, name, namespace string, claimNames []string) *appsv1.Deployment {
 	volumes := make([]corev1.Volume, 0, len(claimNames))
 	for i, claimName := range claimNames {

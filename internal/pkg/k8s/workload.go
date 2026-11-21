@@ -12,6 +12,8 @@ const (
 	statefulSetKind = "StatefulSet"
 )
 
+// Workload identifies a scalable Kubernetes workload that mounts at least one
+// PVC of the targeted storage class.
 type Workload struct {
 	Kind      string `json:"kind"`
 	Name      string `json:"name"`
@@ -19,6 +21,8 @@ type Workload struct {
 	Replicas  int32  `json:"replicas"`
 }
 
+// GetDeploymentWorkloads returns the Deployments in namespace that mount an
+// existing PVC backed by storageClass.
 func (c *Client) GetDeploymentWorkloads(namespace, storageClass string) ([]Workload, error) {
 	deployments, err := c.ClientSet.AppsV1().Deployments(namespace).List(c.Context, metav1.ListOptions{})
 	if err != nil {
@@ -53,6 +57,9 @@ func (c *Client) GetDeploymentWorkloads(namespace, storageClass string) ([]Workl
 	return workloads, nil
 }
 
+// GetStatefulSetWorkloads returns the StatefulSets in namespace that use
+// storageClass, whether through an existing PVC volume or through a volume
+// claim template (including templates relying on the default storage class).
 func (c *Client) GetStatefulSetWorkloads(namespace, storageClass string) ([]Workload, error) {
 	statefulSets, err := c.ClientSet.AppsV1().StatefulSets(namespace).List(c.Context, metav1.ListOptions{})
 	if err != nil {
@@ -103,6 +110,8 @@ func (c *Client) GetStatefulSetWorkloads(namespace, storageClass string) ([]Work
 	return workloads, nil
 }
 
+// GetWorkloads returns every Deployment and StatefulSet in namespace that uses
+// storageClass.
 func (c *Client) GetWorkloads(namespace, storageClass string) ([]Workload, error) {
 	workloads := []Workload{}
 

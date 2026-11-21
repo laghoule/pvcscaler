@@ -11,6 +11,7 @@ import (
 	"github.com/rodaine/table"
 )
 
+// PVCscaler discovers workloads that mount PVCs and scales them down and up.
 type PVCscaler struct {
 	k8sClient *k8s.Client
 	context   context.Context
@@ -21,6 +22,7 @@ type PVCscaler struct {
 	storageClass string
 }
 
+// New builds a PVCscaler for the given namespaces and storage class.
 func New(ctx context.Context, kubeconfig string, namespaces []string, storageClass string, dryRun bool) (*PVCscaler, error) {
 	k8sClient, err := k8s.New(ctx, kubeconfig, dryRun)
 	if err != nil {
@@ -80,6 +82,8 @@ func (p *PVCscaler) getWorkloads(namespaces []string, storageClass string) error
 	return nil
 }
 
+// Down discovers the targeted workloads and scales them to zero replicas,
+// optionally writing their previous state to outputFile.
 func (p *PVCscaler) Down(outputFile string) error {
 	err := p.getWorkloads(p.namespaces, p.storageClass)
 	if err != nil {
@@ -108,6 +112,8 @@ func (p *PVCscaler) Down(outputFile string) error {
 	return nil
 }
 
+// Up restores the workloads recorded in the state file, scaling each back to
+// its saved replica count.
 func (p *PVCscaler) Up(outputFile string) error {
 	var dataset dataset
 
@@ -129,6 +135,7 @@ func (p *PVCscaler) Up(outputFile string) error {
 	return nil
 }
 
+// PrintList prints the discovered workloads as a table.
 func (p *PVCscaler) PrintList() error {
 	err := p.getWorkloads(p.namespaces, p.storageClass)
 	if err != nil {

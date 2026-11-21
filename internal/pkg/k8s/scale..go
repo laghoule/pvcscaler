@@ -32,10 +32,12 @@ func (c *Client) getReplicas(namespace, name string, kind string) (int32, error)
 	return *replicas, nil
 }
 
+// ScaleDown scales the workload to zero replicas.
 func (w *Workload) ScaleDown(k8sClient *Client, namespace, name, kind string) error {
 	return w.scale(k8sClient, namespace, name, kind, 0)
 }
 
+// ScaleUp scales the workload back to the given number of replicas.
 func (w *Workload) ScaleUp(k8sClient *Client, namespace, name, kind string, replicas int32) error {
 	return w.scale(k8sClient, namespace, name, kind, replicas)
 }

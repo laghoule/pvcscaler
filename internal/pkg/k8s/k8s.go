@@ -9,6 +9,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
+// Client wraps the Kubernetes clientset used to discover and scale workloads.
 type Client struct {
 	ClientSet kubernetes.Interface
 	Context   context.Context
@@ -19,6 +20,8 @@ type Client struct {
 	defaultStorageClassErr  error
 }
 
+// New builds a Client from the given kubeconfig. An empty kubeconfig falls back
+// to the default location (~/.kube/config).
 func New(ctx context.Context, kubeconfig string, dryRun bool) (*Client, error) {
 	if kubeconfig == "" {
 		kubeconfig = clientcmd.RecommendedHomeFile
@@ -46,6 +49,7 @@ func New(ctx context.Context, kubeconfig string, dryRun bool) (*Client, error) {
 	}, nil
 }
 
+// GetAllNamespaces returns the names of every namespace in the cluster.
 func (c *Client) GetAllNamespaces() ([]string, error) {
 	namespaces, err := c.ClientSet.CoreV1().Namespaces().List(c.Context, metav1.ListOptions{})
 	if err != nil {
