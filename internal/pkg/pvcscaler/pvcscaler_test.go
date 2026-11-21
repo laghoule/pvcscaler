@@ -1,6 +1,7 @@
 package pvcscaler
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -97,6 +98,28 @@ func TestGetWorkloads(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestGetWorkloadsMultipleNamespaces(t *testing.T) {
+	fakeClient := test.NewFakeClient()
+
+	const namespaceCount = 25
+	for i := 0; i < namespaceCount; i++ {
+		ns := fmt.Sprintf("ns-%02d", i)
+		test.CreateNamespaceNamed(fakeClient, ns)
+		test.CreatePVC(fakeClient, "nginx-pvc", ns, "standard")
+		test.CreateDeploymentNamed(fakeClient, "nginx-deployment", ns, []string{"nginx-pvc"})
+	}
+
+	pvcscaler := &PVCscaler{
+		k8sClient:    &k8s.Client{ClientSet: fakeClient, Context: t.Context()},
+		context:      t.Context(),
+		namespaces:   []string{"all"},
+		storageClass: "standard",
+	}
+
+	assert.NoError(t, pvcscaler.getWorkloads([]string{"all"}, "standard"))
+	assert.Len(t, pvcscaler.workloads, namespaceCount)
 }
 
 func TestDown(t *testing.T) {

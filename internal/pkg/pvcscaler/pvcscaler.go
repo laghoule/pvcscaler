@@ -47,6 +47,7 @@ func (p *PVCscaler) getWorkloads(namespaces []string, storageClass string) error
 	}
 
 	var wg sync.WaitGroup
+	var mu sync.Mutex
 	var errChan = make(chan error, len(namespaces))
 
 	for _, ns := range namespaces {
@@ -62,7 +63,9 @@ func (p *PVCscaler) getWorkloads(namespaces []string, storageClass string) error
 					errChan <- err
 					return
 				}
+				mu.Lock()
 				p.workloads = append(p.workloads, workloads...)
+				mu.Unlock()
 			}
 		}(ns)
 	}

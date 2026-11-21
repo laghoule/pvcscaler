@@ -2,6 +2,7 @@ package k8s
 
 import (
 	"context"
+	"sync"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -12,6 +13,10 @@ type Client struct {
 	ClientSet kubernetes.Interface
 	Context   context.Context
 	DryRun    bool
+
+	defaultStorageClassOnce sync.Once
+	defaultStorageClass     string
+	defaultStorageClassErr  error
 }
 
 func New(ctx context.Context, kubeconfig string, dryRun bool) (*Client, error) {

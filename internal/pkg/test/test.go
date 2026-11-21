@@ -5,6 +5,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubernetes "k8s.io/client-go/kubernetes"
 	fake "k8s.io/client-go/kubernetes/fake"
@@ -132,4 +133,62 @@ func CreatePVC(c kubernetes.Interface, name, namespace, storageClass string) *co
 	}
 	pvc, _ := c.CoreV1().PersistentVolumeClaims(namespace).Create(context.TODO(), pvcObj, metav1.CreateOptions{})
 	return pvc
+}
+
+func CreateNamespaceNamed(c kubernetes.Interface, name string) *corev1.Namespace {
+	nsObj := &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+		},
+	}
+	ns, _ := c.CoreV1().Namespaces().Create(context.TODO(), nsObj, metav1.CreateOptions{})
+	return ns
+}
+
+func CreateStorageClass(c kubernetes.Interface, name string, defaultClass bool) *storagev1.StorageClass {
+	annotations := map[string]string{}
+	if defaultClass {
+		annotations["storageclass.kubernetes.io/is-default-class"] = "true"
+	}
+
+	scObj := &storagev1.StorageClass{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        name,
+			Annotations: annotations,
+		},
+		Provisioner: "kubernetes.io/no-provisioner",
+	}
+	sc, _ := c.StorageV1().StorageClasses().Create(context.TODO(), scObj, metav1.CreateOptions{})
+	return sc
+}
+
+func CreateDeploymentNamed(c kubernetes.Interface, name, namespace string, claimNames []string) *appsv1.Deployment {
+	volumes := make([]corev1.Volume, 0, len(claimNames))
+	for i, claimName := range claimNames {
+		volumes = append(volumes, corev1.Volume{
+			Name: PvcName + "-" + string(rune('a'+i)),
+			VolumeSource: corev1.VolumeSource{
+				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+					ClaimName: claimName,
+				},
+			},
+		})
+	}
+
+	depObj := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+		Spec: appsv1.DeploymentSpec{
+			Replicas: int32PTR(1),
+			Template: corev1.PodTemplateSpec{
+				Spec: corev1.PodSpec{
+					Volumes: volumes,
+				},
+			},
+		},
+	}
+	dep, _ := c.AppsV1().Deployments(namespace).Create(context.TODO(), depObj, metav1.CreateOptions{})
+	return dep
 }

@@ -3,6 +3,7 @@ package k8s
 import (
 	"fmt"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -19,82 +20,84 @@ type Workload struct {
 }
 
 func (c *Client) GetDeploymentWorkloads(namespace, storageClass string) ([]Workload, error) {
-	dep, err := c.ClientSet.AppsV1().Deployments(namespace).List(c.Context, metav1.ListOptions{})
+	deployments, err := c.ClientSet.AppsV1().Deployments(namespace).List(c.Context, metav1.ListOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to list deployments: %v", err)
 	}
 
 	workloads := []Workload{}
 
-	for _, dep := range dep.Items {
-		if dep.Spec.Template.Spec.Volumes == nil {
+	for _, dep := range deployments.Items {
+		matched, err := c.volumesUseStorageClass(dep.Spec.Template.Spec.Volumes, namespace, storageClass)
+		if err != nil {
+			return nil, err
+		}
+
+		if !matched {
 			continue
 		}
-		for _, vol := range dep.Spec.Template.Spec.Volumes {
-			if vol.PersistentVolumeClaim == nil {
-				continue
-			}
 
-			pvcMatchSC, err := c.isStorageClassMatched(vol.PersistentVolumeClaim.ClaimName, namespace, storageClass)
-			if err != nil {
-				return nil, err
-			}
-
-			if !pvcMatchSC {
-				continue
-			}
-
-			replicas, err := c.getReplicas(namespace, dep.Name, deploymentKind)
-			if err != nil {
-				return nil, err
-			}
-
-			workloads = append(workloads, Workload{
-				Name:      dep.Name,
-				Kind:      deploymentKind,
-				Namespace: namespace,
-				Replicas:  replicas,
-			})
+		replicas, err := c.getReplicas(namespace, dep.Name, deploymentKind)
+		if err != nil {
+			return nil, err
 		}
+
+		workloads = append(workloads, Workload{
+			Name:      dep.Name,
+			Kind:      deploymentKind,
+			Namespace: namespace,
+			Replicas:  replicas,
+		})
 	}
 
 	return workloads, nil
 }
 
 func (c *Client) GetStatefulSetWorkloads(namespace, storageClass string) ([]Workload, error) {
-	sts, err := c.ClientSet.AppsV1().StatefulSets(namespace).List(c.Context, metav1.ListOptions{})
+	statefulSets, err := c.ClientSet.AppsV1().StatefulSets(namespace).List(c.Context, metav1.ListOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to list statefulset: %v", err)
 	}
 
+	defaultStorageClass, err := c.getDefaultStorageClass()
+	if err != nil {
+		return nil, err
+	}
+
 	workloads := []Workload{}
 
-	for _, sts := range sts.Items {
-		if sts.Spec.VolumeClaimTemplates == nil {
+	for _, sts := range statefulSets.Items {
+		// A statefulset can mount an existing PVC through regular volumes.
+		matched, err := c.volumesUseStorageClass(sts.Spec.Template.Spec.Volumes, namespace, storageClass)
+		if err != nil {
+			return nil, err
+		}
+
+		// It can also request new PVCs through volume claim templates.
+		if !matched {
+			for _, vct := range sts.Spec.VolumeClaimTemplates {
+				if isVolumeClaimTemplateStorageClassMatched(vct.Spec.StorageClassName, defaultStorageClass, storageClass) {
+					matched = true
+					break
+				}
+			}
+		}
+
+		if !matched {
 			continue
 		}
 
-		for _, vct := range sts.Spec.VolumeClaimTemplates {
-			if vct.Spec.StorageClassName == nil {
-				continue
-			}
-
-			if *vct.Spec.StorageClassName != storageClass {
-				continue
-			}
-
-			replicas, err := c.getReplicas(namespace, sts.Name, statefulSetKind)
-			if err != nil {
-				return nil, err
-			}
-
-			workloads = append(workloads, Workload{
-				Name:      sts.Name,
-				Kind:      statefulSetKind,
-				Namespace: namespace,
-				Replicas:  replicas,
-			})
+		replicas, err := c.getReplicas(namespace, sts.Name, statefulSetKind)
+		if err != nil {
+			return nil, err
 		}
+
+		workloads = append(workloads, Workload{
+			Name:      sts.Name,
+			Kind:      statefulSetKind,
+			Namespace: namespace,
+			Replicas:  replicas,
+		})
 	}
 
 	return workloads, nil
@@ -118,4 +121,25 @@ func (c *Client) GetWorkloads(namespace, storageClass string) ([]Workload, error
 	workloads = append(workloads, stsWorkloads...)
 
 	return workloads, nil
+}
+
+// volumesUseStorageClass reports whether any of the given volumes references an
+// existing PVC backed by the requested storage class.
+func (c *Client) volumesUseStorageClass(volumes []corev1.Volume, namespace, storageClass string) (bool, error) {
+	for _, vol := range volumes {
+		if vol.PersistentVolumeClaim == nil {
+			continue
+		}
+
+		matched, err := c.isStorageClassMatched(vol.PersistentVolumeClaim.ClaimName, namespace, storageClass)
+		if err != nil {
+			return false, err
+		}
+
+		if matched {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
